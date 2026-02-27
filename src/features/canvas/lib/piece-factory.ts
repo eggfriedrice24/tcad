@@ -1,6 +1,26 @@
-import type { PatternPieceData } from "@/types/pattern";
+import type { CurveSegment, PatternPieceData, Point2D } from "@/types/pattern";
 
 let pieceCounter = 0;
+
+export function createPieceFromOutline(origin: Point2D, segments: CurveSegment[]): PatternPieceData {
+  pieceCounter++;
+  return {
+    id: crypto.randomUUID(),
+    name: `Piece ${pieceCounter}`,
+    origin,
+    outline: segments,
+    grain_line: null,
+    seam_allowance_mm: 10,
+    notches: [],
+    internal_lines: [],
+    metadata: {
+      fabric_type: null,
+      cut_quantity: 2,
+      mirror: false,
+      notes: "",
+    },
+  };
+}
 
 export function createDefaultRectangle(): PatternPieceData {
   pieceCounter++;
