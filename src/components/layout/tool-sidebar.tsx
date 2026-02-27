@@ -1,4 +1,4 @@
-import type { Tool } from "@/contexts/tool-context";
+import type { Tool } from "@/stores/tool-store";
 
 import {
   Cursor02Icon,

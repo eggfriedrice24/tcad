@@ -1,4 +1,4 @@
-import type { ViewMode } from "@/contexts/workspace-context";
+import type { ViewMode } from "@/stores/workspace-store";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
