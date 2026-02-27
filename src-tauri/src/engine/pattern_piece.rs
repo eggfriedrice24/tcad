@@ -50,6 +50,7 @@ pub fn get_all() -> Result<Vec<PatternPieceData>, String> {
 }
 
 /// Create a default empty pattern piece with a given name.
+#[allow(dead_code)]
 pub fn create_default(name: &str) -> PatternPieceData {
     PatternPieceData {
         id: String::new(),

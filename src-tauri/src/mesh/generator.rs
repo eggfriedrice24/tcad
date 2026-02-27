@@ -17,8 +17,7 @@ pub fn generate_mesh(pieces: &[PatternPieceData]) -> Result<MeshData, String> {
             continue;
         }
 
-        let (positions, indices) =
-            tessellation::tessellate_outline(&piece.origin, &piece.outline)?;
+        let (positions, indices) = tessellation::tessellate_outline(&piece.origin, &piece.outline)?;
 
         let vertex_count = positions.len() / 3;
 

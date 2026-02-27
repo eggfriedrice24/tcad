@@ -1,8 +1,6 @@
-use lyon_path::Path;
 use lyon_path::math::point;
-use lyon_tessellation::{
-    BuffersBuilder, FillOptions, FillTessellator, FillVertex, VertexBuffers,
-};
+use lyon_path::Path;
+use lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, VertexBuffers};
 
 use crate::types::pattern::{CurveSegment, Point2D};
 
@@ -77,7 +75,11 @@ pub fn tessellate_outline(
         )
         .map_err(|e| format!("Tessellation failed: {e:?}"))?;
 
-    let positions: Vec<f32> = buffers.vertices.iter().flat_map(|v| v.iter().copied()).collect();
+    let positions: Vec<f32> = buffers
+        .vertices
+        .iter()
+        .flat_map(|v| v.iter().copied())
+        .collect();
     let indices = buffers.indices;
 
     Ok((positions, indices))
