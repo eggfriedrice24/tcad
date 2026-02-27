@@ -11,7 +11,7 @@ export function CenterWorkspace() {
       {viewMode === "2d" && <Canvas2D />}
       {viewMode === "3d" && <Viewport3D />}
       {viewMode === "split" && (
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize={50} minSize={20}>
             <div className="relative size-full">
               <Canvas2D />

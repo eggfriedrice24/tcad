@@ -14,7 +14,7 @@
     "tauri": "tauri",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "check": "pnpm lint && pnpm typecheck",
     "ui:add": "shadcn add",
     "clean": "rimraf dist node_modules/.cache src-tauri/target",

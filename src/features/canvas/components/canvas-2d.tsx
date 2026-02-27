@@ -71,7 +71,7 @@ export function Canvas2D() {
   }, [deletePieceMut]);
 
   // Sync settled zoom to workspace store (debounced)
-  const zoomTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const zoomTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const syncZoom = useCallback((zoom: number) => {
     clearTimeout(zoomTimerRef.current);
     zoomTimerRef.current = setTimeout(() => {

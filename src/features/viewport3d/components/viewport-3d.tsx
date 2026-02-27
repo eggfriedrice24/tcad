@@ -67,7 +67,7 @@ function CameraFramer({ pieces }: { pieces: PatternPieceData[] }) {
 
     if (controlsRef && "target" in controlsRef) {
       (controlsRef.target as Vector3).set(cx, cy, 0);
-      (controlsRef as { update: () => void }).update();
+      (controlsRef as unknown as { update: () => void }).update();
     }
   }, [cx, cy, camera, controlsRef, pieces]);
 
