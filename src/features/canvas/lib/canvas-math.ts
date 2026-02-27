@@ -1,0 +1,44 @@
+import type { Point2D } from "@/types/pattern";
+
+export type Camera = {
+  x: number;
+  y: number;
+  zoom: number;
+};
+
+export function createCamera(): Camera {
+  return { x: 0, y: 0, zoom: 1 };
+}
+
+export function screenToWorld(camera: Camera, sx: number, sy: number): Point2D {
+  return {
+    x: (sx - camera.x) / camera.zoom,
+    y: (sy - camera.y) / camera.zoom,
+  };
+}
+
+export function worldToScreen(camera: Camera, wx: number, wy: number): Point2D {
+  return {
+    x: wx * camera.zoom + camera.x,
+    y: wy * camera.zoom + camera.y,
+  };
+}
+
+export function applyTransform(ctx: CanvasRenderingContext2D, camera: Camera) {
+  ctx.setTransform(camera.zoom, 0, 0, camera.zoom, camera.x, camera.y);
+}
+
+const MIN_ZOOM = 0.05;
+const MAX_ZOOM = 50;
+const ZOOM_FACTOR = 1.1;
+
+export function zoomAtPoint(camera: Camera, screenX: number, screenY: number, delta: number): Camera {
+  const direction = delta > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR;
+  const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, camera.zoom * direction));
+
+  return {
+    x: screenX - (screenX - camera.x) * (newZoom / camera.zoom),
+    y: screenY - (screenY - camera.y) * (newZoom / camera.zoom),
+    zoom: newZoom,
+  };
+}
