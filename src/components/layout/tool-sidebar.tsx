@@ -59,6 +59,7 @@ export function ToolSidebar() {
                     isActive={activeTool === tool.id}
                     tooltip={tool.label}
                     onClick={() => setActiveTool(tool.id)}
+                    className="data-active:text-primary"
                   >
                     <HugeiconsIcon icon={tool.icon} strokeWidth={2} />
                     <span>{tool.label}</span>
