@@ -35,7 +35,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlEOEI2OTBFMUE4RDgzQUYKUldTdmc0MGFEbW1MblJuUy85ZzQ5eFpPZm1YbDUydWFuZ24wemdmcm5pOGMxNXR0bkVXZFFMSS8K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMzM0VDMDBCMkQ4NDE4QUUKUldTdUdJUXRDOEErdzZQYXVhU0thb0p3N2dtM0hmOFNqVVZ4RTQ0Wm1McHNhUTkxRWpPNGtlZWcK",
       "endpoints": [
         "https://github.com/eggfriedrice24/tcad/releases/latest/download/latest.json"
       ]
