@@ -4,11 +4,13 @@ import {
   Cursor02Icon,
   EaseCurveControlPointsIcon,
   PenToolAddIcon,
+  PlusSignIcon,
   RulerIcon,
   SolidLine01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +23,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { createDefaultRectangle } from "@/features/canvas/lib/piece-factory";
+import { useCreatePiece, usePatternPieces } from "@/features/pattern/hooks/use-pattern-queries";
+import { useSelection } from "@/hooks/use-selection";
 import { useTool } from "@/hooks/use-tool";
 
 const tools: { id: Tool; label: string; icon: typeof Cursor02Icon }[] = [
@@ -33,6 +38,16 @@ const tools: { id: Tool; label: string; icon: typeof Cursor02Icon }[] = [
 
 export function ToolSidebar() {
   const { activeTool, setActiveTool } = useTool();
+  const { data: pieces } = usePatternPieces();
+  const createPiece = useCreatePiece();
+  const { selectedIds, select } = useSelection();
+
+  const handleNewPiece = () => {
+    const piece = createDefaultRectangle();
+    createPiece.mutate(piece, {
+      onSuccess: () => select(piece.id),
+    });
+  };
 
   return (
     <Sidebar side="left" collapsible="icon">
@@ -70,9 +85,39 @@ export function ToolSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Pieces</SidebarGroupLabel>
+          <div className="flex items-center justify-between px-2">
+            <SidebarGroupLabel className="p-0">Pieces</SidebarGroupLabel>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              onClick={handleNewPiece}
+              disabled={createPiece.isPending}
+              title="New Piece"
+            >
+              <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
+            </Button>
+          </div>
           <SidebarGroupContent>
-            <p className="px-2 text-xs text-muted-foreground">No pieces yet</p>
+            {pieces && pieces.length > 0
+              ? (
+                  <SidebarMenu>
+                    {pieces.map(piece => (
+                      <SidebarMenuItem key={piece.id}>
+                        <SidebarMenuButton
+                          isActive={selectedIds.has(piece.id)}
+                          onClick={() => select(piece.id)}
+                          className="cursor-pointer data-active:text-primary"
+                        >
+                          <span className="truncate">{piece.name}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                )
+              : (
+                  <p className="px-2 text-xs text-muted-foreground">No pieces yet</p>
+                )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
