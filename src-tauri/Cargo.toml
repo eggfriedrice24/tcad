@@ -2,8 +2,10 @@
 name = "tcad"
 version = "0.1.0"
 description = "Desktop 2D/3D garment pattern CAD"
-authors = ["you"]
+authors = ["eggfriedrice24"]
+license = "MIT"
 edition = "2021"
+repository = "https://github.com/eggfriedrice24/tcad"
 
 [lib]
 name = "tcad_lib"

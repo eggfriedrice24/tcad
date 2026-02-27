@@ -1,8 +1,12 @@
 {
-  "name": "tcad-fe",
+  "name": "tcad",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "description": "Desktop 2D/3D garment pattern CAD",
+  "author": "eggfriedrice24",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
