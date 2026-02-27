@@ -8,12 +8,14 @@ import { Toolbar } from "@/components/layout/toolbar";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { UpdateDialog } from "@/components/update-dialog";
 import { queryClient } from "@/lib/query-client";
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system">
+        <UpdateDialog />
         <TooltipProvider>
           <SidebarProvider>
             <ToolSidebar />

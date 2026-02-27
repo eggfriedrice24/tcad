@@ -30,6 +30,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": "v1Compatible"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlEOEI2OTBFMUE4RDgzQUYKUldTdmc0MGFEbW1MblJuUy85ZzQ5eFpPZm1YbDUydWFuZ24wemdmcm5pOGMxNXR0bkVXZFFMSS8K",
+      "endpoints": [
+        "https://github.com/eggfriedrice24/tcad/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
