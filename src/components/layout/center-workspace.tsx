@@ -1,3 +1,4 @@
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Canvas2D } from "@/features/canvas/components/canvas-2d";
 import { useWorkspace } from "@/hooks/use-workspace";
 
@@ -5,13 +6,27 @@ export function CenterWorkspace() {
   const { viewMode } = useWorkspace();
 
   return (
-    <div className="relative flex flex-1 items-center justify-center bg-muted/30">
+    <div className="relative flex flex-1 bg-muted/30">
       {viewMode === "2d" && <Canvas2D />}
       {viewMode === "3d" && (
-        <p className="text-sm text-muted-foreground">3D Viewport</p>
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-sm text-muted-foreground">3D Viewport</p>
+        </div>
       )}
       {viewMode === "split" && (
-        <p className="text-sm text-muted-foreground">Split View</p>
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={50} minSize={20}>
+            <div className="relative size-full">
+              <Canvas2D />
+            </div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={50} minSize={20}>
+            <div className="flex size-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">3D Viewport</p>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       )}
     </div>
   );

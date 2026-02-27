@@ -44,20 +44,15 @@ export function Canvas2D() {
     }, 50);
   }, []);
 
-  // --- Resize ---
+  // Track container size in a ref so resize + redraw happen in the same frame
+  const sizeRef = useRef({ w: 0, h: 0 });
   useEffect(() => {
     const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas)
+    if (!container)
       return;
-
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      sizeRef.current = { w: width, h: height };
     });
     ro.observe(container);
     return () => ro.disconnect();
@@ -74,15 +69,23 @@ export function Canvas2D() {
 
     function render() {
       const dpr = window.devicePixelRatio || 1;
-      const w = canvas!.width;
-      const h = canvas!.height;
+      const { w: cssW, h: cssH } = sizeRef.current;
+      const bufW = Math.round(cssW * dpr);
+      const bufH = Math.round(cssH * dpr);
 
-      // Scale camera for DPR
+      // Resize canvas buffer only when needed (same frame as draw — no blink)
+      if (canvas!.width !== bufW || canvas!.height !== bufH) {
+        canvas!.width = bufW;
+        canvas!.height = bufH;
+        canvas!.style.width = `${cssW}px`;
+        canvas!.style.height = `${cssH}px`;
+      }
+
       const cam = cameraRef.current;
       const dprCam = { x: cam.x * dpr, y: cam.y * dpr, zoom: cam.zoom * dpr };
 
-      clearCanvas(ctx!, w, h);
-      drawGrid(ctx!, dprCam, w, h);
+      clearCanvas(ctx!, bufW, bufH);
+      drawGrid(ctx!, dprCam, bufW, bufH);
       drawPieces(ctx!, dprCam, piecesRef.current, selectedIdsRef.current, hoveredIdRef.current);
 
       rafRef.current = requestAnimationFrame(render);
