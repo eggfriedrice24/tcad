@@ -123,6 +123,52 @@ export function getBounds(piece: PatternPieceData): { minX: number; minY: number
   return { minX, minY, maxX, maxY };
 }
 
+function flattenOutline(origin: Point2D, outline: CurveSegment[]): Point2D[] {
+  const pts: Point2D[] = [{ ...origin }];
+  let cursor: Point2D = { x: origin.x, y: origin.y };
+
+  for (const seg of outline) {
+    let sampled: Point2D[];
+    switch (seg.type) {
+      case "Line":
+        pts.push({ ...seg.end });
+        cursor = seg.end;
+        continue;
+      case "QuadraticBezier":
+        sampled = sampleBezier2(cursor, seg.control, seg.end, 16);
+        break;
+      case "CubicBezier":
+        sampled = sampleBezier3(cursor, seg.control1, seg.control2, seg.end, 20);
+        break;
+      case "Arc":
+        sampled = sampleArc(seg, 20);
+        break;
+    }
+    // Skip first point (same as cursor)
+    for (let i = 1; i < sampled.length; i++) {
+      pts.push(sampled[i]);
+    }
+    cursor = sampled[sampled.length - 1];
+  }
+
+  return pts;
+}
+
+function pointInPolygon(p: Point2D, polygon: Point2D[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+
+    if (((yi > p.y) !== (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
 export function hitTestPiece(worldPt: Point2D, piece: PatternPieceData, screenTolerance: number, zoom: number): boolean {
   const tolerance = screenTolerance / zoom;
 
@@ -133,7 +179,12 @@ export function hitTestPiece(worldPt: Point2D, piece: PatternPieceData, screenTo
     return false;
   }
 
-  // Check distance to path
+  // Check if point is inside the filled polygon
+  const polygon = flattenOutline(piece.origin, piece.outline);
+  if (pointInPolygon(worldPt, polygon))
+    return true;
+
+  // Fall back to distance-to-path for edge hits
   return distToPath(worldPt, piece.origin, piece.outline) < tolerance;
 }
 
