@@ -1,14 +1,31 @@
 import type { Camera } from "../lib/canvas-math";
+import type { CanvasTool, PointerState, ToolContext } from "../lib/tools/tool-types";
+import type { Tool } from "@/stores/tool-store";
 
 import { useCallback, useEffect, useRef } from "react";
-import { usePatternPieces } from "@/features/pattern/hooks/use-pattern-queries";
+import { useCreatePiece, useDeletePiece, usePatternPieces, useUpdatePiece } from "@/features/pattern/hooks/use-pattern-queries";
 import { useSelectionStore } from "@/stores/selection-store";
-
+import { useToolStore } from "@/stores/tool-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 
 import { createCamera, screenToWorld, zoomAtPoint } from "../lib/canvas-math";
 import { clearCanvas, drawGrid, drawPieces } from "../lib/canvas-renderer";
-import { hitTestPieces } from "../lib/hit-test";
+import { createTool } from "../lib/tools/create-tool";
+
+const TOOL_SHORTCUTS: Record<string, Tool> = {
+  v: "select",
+  l: "line",
+  c: "curve",
+  p: "pen",
+  m: "measure",
+};
+
+function isTextInput(el: EventTarget | null): boolean {
+  if (!el || !(el instanceof HTMLElement))
+    return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+}
 
 export function Canvas2D() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,6 +35,7 @@ export function Canvas2D() {
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const spaceHeldRef = useRef(false);
+  const toolRef = useRef<CanvasTool | null>(null);
 
   const { data: pieces } = usePatternPieces();
   const piecesRef = useRef(pieces ?? []);
@@ -34,6 +52,23 @@ export function Canvas2D() {
       hoveredIdRef.current = state.hoveredId;
     });
   }, []);
+
+  // Mutations
+  const createPieceMut = useCreatePiece();
+  const updatePieceMut = useUpdatePiece();
+  const deletePieceMut = useDeletePiece();
+  const createPieceMutRef = useRef(createPieceMut);
+  const updatePieceMutRef = useRef(updatePieceMut);
+  const deletePieceMutRef = useRef(deletePieceMut);
+  useEffect(() => {
+    createPieceMutRef.current = createPieceMut;
+  }, [createPieceMut]);
+  useEffect(() => {
+    updatePieceMutRef.current = updatePieceMut;
+  }, [updatePieceMut]);
+  useEffect(() => {
+    deletePieceMutRef.current = deletePieceMut;
+  }, [deletePieceMut]);
 
   // Sync settled zoom to workspace store (debounced)
   const zoomTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -56,6 +91,43 @@ export function Canvas2D() {
     });
     ro.observe(container);
     return () => ro.disconnect();
+  }, []);
+
+  // Build tool context (stable ref, callbacks use refs internally)
+  const toolCtxRef = useRef<ToolContext | null>(null);
+  if (!toolCtxRef.current) {
+    toolCtxRef.current = {
+      cameraRef,
+      piecesRef,
+      selectedIdsRef,
+      hoveredIdRef,
+      canvasRef,
+      createPiece: piece => createPieceMutRef.current.mutate(piece),
+      updatePiece: (id, piece) => updatePieceMutRef.current.mutate({ id, piece }),
+      deletePiece: id => deletePieceMutRef.current.mutate(id),
+      selectPiece: id => useSelectionStore.getState().select(id),
+      togglePiece: id => useSelectionStore.getState().toggle(id),
+      clearSelection: () => useSelectionStore.getState().clear(),
+      setHovered: id => useSelectionStore.getState().setHovered(id),
+      setActiveTool: tool => useToolStore.getState().setActiveTool(tool as Tool),
+      screenToWorld: (sx, sy) => screenToWorld(cameraRef.current, sx, sy),
+      getCanvasRect: () => canvasRef.current?.getBoundingClientRect() ?? null,
+    };
+  }
+
+  // Create/recreate tool when active tool changes
+  useEffect(() => {
+    const createNewTool = (toolName: Tool) => {
+      toolRef.current?.cleanup();
+      toolRef.current = createTool(toolName, toolCtxRef.current!);
+    };
+
+    // Initialize with current tool
+    createNewTool(useToolStore.getState().activeTool);
+
+    return useToolStore.subscribe((state) => {
+      createNewTool(state.activeTool);
+    });
   }, []);
 
   // --- rAF render loop ---
@@ -88,6 +160,9 @@ export function Canvas2D() {
       drawGrid(ctx!, dprCam, bufW, bufH);
       drawPieces(ctx!, dprCam, piecesRef.current, selectedIdsRef.current, hoveredIdRef.current);
 
+      // Draw tool overlay
+      toolRef.current?.drawOverlay(ctx!, dprCam);
+
       rafRef.current = requestAnimationFrame(render);
     }
 
@@ -95,24 +170,61 @@ export function Canvas2D() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // --- Keyboard (space for pan) ---
+  // --- Keyboard (space for pan + tool shortcuts + tool key events) ---
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore when typing in text inputs
+      if (isTextInput(e.target))
+        return;
+
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
         spaceHeldRef.current = true;
+        return;
       }
+
+      // Tool shortcuts (single key, no modifiers)
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const toolName = TOOL_SHORTCUTS[e.key.toLowerCase()];
+        if (toolName) {
+          e.preventDefault();
+          useToolStore.getState().setActiveTool(toolName);
+          return;
+        }
+      }
+
+      // Forward to active tool
+      toolRef.current?.onKeyDown(e);
     };
+
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         spaceHeldRef.current = false;
       }
     };
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+
+  // --- Helper to build PointerState from React event ---
+  const getPointerState = useCallback((e: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>): PointerState | null => {
+    const canvas = canvasRef.current;
+    if (!canvas)
+      return null;
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const world = screenToWorld(cameraRef.current, sx, sy);
+    return {
+      world,
+      screen: { x: sx, y: sy },
+      shiftKey: e.shiftKey,
+      button: e.button,
     };
   }, []);
 
@@ -131,27 +243,11 @@ export function Canvas2D() {
       return;
     }
 
-    // Left click → select
-    if (e.button === 0) {
-      const rect = canvas.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
-      const world = screenToWorld(cameraRef.current, sx, sy);
-      const hit = hitTestPieces(world, piecesRef.current, cameraRef.current.zoom);
-
-      if (hit) {
-        if (e.shiftKey) {
-          useSelectionStore.getState().toggle(hit.id);
-        }
-        else {
-          useSelectionStore.getState().select(hit.id);
-        }
-      }
-      else {
-        useSelectionStore.getState().clear();
-      }
+    const state = getPointerState(e);
+    if (state) {
+      toolRef.current?.onPointerDown(state);
     }
-  }, []);
+  }, [getPointerState]);
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -170,35 +266,48 @@ export function Canvas2D() {
       return;
     }
 
-    // Hover detection
+    // Update cursor coords in workspace store
     const rect = canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const world = screenToWorld(cameraRef.current, sx, sy);
-
-    // Update cursor coords in workspace store
     useWorkspaceStore.getState().setCursorWorld({ x: Math.round(world.x * 10) / 10, y: Math.round(world.y * 10) / 10 });
 
-    const hit = hitTestPieces(world, piecesRef.current, cameraRef.current.zoom);
-    const newHoveredId = hit?.id ?? null;
-    if (newHoveredId !== hoveredIdRef.current) {
-      useSelectionStore.getState().setHovered(newHoveredId);
+    const state = getPointerState(e);
+    if (state) {
+      toolRef.current?.onPointerMove(state);
     }
 
     // Cursor style
-    canvas.style.cursor = hit
-      ? "pointer"
-      : spaceHeldRef.current
-        ? "grab"
-        : "default";
-  }, []);
+    if (spaceHeldRef.current) {
+      canvas.style.cursor = "grab";
+    }
+    else {
+      canvas.style.cursor = toolRef.current?.getCursor() ?? "default";
+    }
+  }, [getPointerState]);
 
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (isPanningRef.current) {
       isPanningRef.current = false;
       canvasRef.current?.releasePointerCapture(e.pointerId);
+      return;
     }
-  }, []);
+
+    const state = getPointerState(e);
+    if (state) {
+      toolRef.current?.onPointerUp(state);
+    }
+  }, [getPointerState]);
+
+  const onDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isPanningRef.current)
+      return;
+    const state = getPointerState(e);
+    if (state) {
+      toolRef.current?.onDoubleClick(state);
+    }
+  }, [getPointerState]);
 
   const onWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -227,6 +336,7 @@ export function Canvas2D() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onDoubleClick={onDoubleClick}
         onWheel={onWheel}
         onContextMenu={e => e.preventDefault()}
       />
