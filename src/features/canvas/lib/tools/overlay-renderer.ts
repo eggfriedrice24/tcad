@@ -115,6 +115,31 @@ export function drawCloseIndicator(ctx: CanvasRenderingContext2D, p: Point2D, zo
   ctx.fill();
 }
 
+const COLOR_SNAP = "rgba(59, 130, 246, 0.6)";
+const SNAP_LINE_EXTENT = 30; // pixels in screen space
+
+export function drawSnapIndicator(ctx: CanvasRenderingContext2D, p: Point2D, zoom: number, snapX: boolean, snapY: boolean) {
+  const extent = SNAP_LINE_EXTENT / zoom;
+  ctx.strokeStyle = COLOR_SNAP;
+  ctx.lineWidth = 1 / zoom;
+  ctx.setLineDash([3 / zoom, 3 / zoom]);
+
+  if (snapX) {
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - extent);
+    ctx.lineTo(p.x, p.y + extent);
+    ctx.stroke();
+  }
+  if (snapY) {
+    ctx.beginPath();
+    ctx.moveTo(p.x - extent, p.y);
+    ctx.lineTo(p.x + extent, p.y);
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+}
+
 export function beginOverlay(ctx: CanvasRenderingContext2D, camera: Camera) {
   ctx.save();
   applyTransform(ctx, camera);
