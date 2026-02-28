@@ -8,7 +8,7 @@ Built with **Tauri v2** (Rust backend) + **React** (TypeScript frontend).
 
 - **2D Canvas** - Draw pattern pieces with line, curve, and pen tools. Pan/zoom, adaptive grid, selection, drag-move.
 - **3D Viewport** - Live mesh preview of pattern pieces via Three.js. Auto-framing camera, selection sync with 2D.
-- **Geometry Engine** - Seam allowance, validation, area computation — all in Rust.
+- **Geometry Engine** - Seam allowance, validation, area computation - all in Rust.
 - **Persistence** - Project save/load (`.tcad`), undo/redo (100 states), auto-recovery on crash.
 - **Export** - SVG, DXF (R12), and tiled PDF (A4/Letter with alignment crosshairs).
 
@@ -113,11 +113,25 @@ src-tauri/src/
 
 ```bash
 pnpm install              # Install dependencies
-pnpm tauri dev            # Start dev (Vite + Rust)
-pnpm tauri build          # Production build
+pnpm tauri dev            # Start full Tauri app (Vite + Rust)
+pnpm tauri build          # Build distributable desktop app
+pnpm dev                  # Start Vite dev server only
+pnpm build                # Typecheck + Vite production build
+pnpm lint                 # ESLint check
+pnpm lint:fix             # ESLint autofix
+pnpm typecheck            # TypeScript type check
+pnpm check                # lint + typecheck
+pnpm ui:add <name>        # Add shadcn component
+pnpm clean                # Remove dist, cache, and Rust target
+```
 
-pnpm check                # Lint + typecheck
-cd src-tauri && cargo test # Rust tests
+Rust-only:
+
+```bash
+cd src-tauri
+cargo check               # Check Rust compiles
+cargo clippy              # Rust linter
+cargo test                # Run Rust tests
 ```
 
 ## License
