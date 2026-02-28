@@ -359,7 +359,7 @@ export function createNodeEditTool(ctx: ToolContext): CanvasTool {
     if (!piece)
       return "default";
 
-    return "default";
+    return "pointer";
   }
 
   function cleanup() {

@@ -2,6 +2,10 @@ import type { CurveSegment, PatternPieceData, Point2D } from "@/types/pattern";
 
 let pieceCounter = 0;
 
+export function resetPieceCounter(count = 0) {
+  pieceCounter = count;
+}
+
 export function createPieceFromOutline(origin: Point2D, segments: CurveSegment[]): PatternPieceData {
   pieceCounter++;
   return {

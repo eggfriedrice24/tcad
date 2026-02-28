@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCanUndoRedo, useRedo, useUndo } from "@/features/pattern/hooks/use-pattern-queries";
+import { useCanUndoRedo, usePatternPieces, useRedo, useUndo } from "@/features/pattern/hooks/use-pattern-queries";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { exportDxf, exportPdf, exportSvgToFile } from "@/lib/invoke";
 import { useProjectStore } from "@/stores/project-store";
@@ -88,6 +88,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
 export function Toolbar() {
   const { viewMode, setViewMode } = useWorkspace();
   const { name, dirty } = useProjectStore();
+  const { data: pieces } = usePatternPieces();
   const undoMut = useUndo();
   const redoMut = useRedo();
   const { data: undoRedoState } = useCanUndoRedo();
@@ -157,15 +158,18 @@ export function Toolbar() {
                   className="flex w-full items-center rounded px-2 py-1.5 text-xs hover:bg-accent"
                   onClick={() => {
                     const ext = format.toLowerCase();
+                    const ids = pieces?.map(p => p.id) ?? [];
                     save({ filters: [{ name: format, extensions: [ext] }] }).then((path) => {
                       if (!path)
                         return;
+                      let promise: Promise<unknown> | undefined;
                       if (ext === "svg")
-                        exportSvgToFile([], path);
+                        promise = exportSvgToFile(ids, path);
                       else if (ext === "dxf")
-                        exportDxf([], path);
+                        promise = exportDxf(ids, path);
                       else if (ext === "pdf")
-                        exportPdf([], path);
+                        promise = exportPdf(ids, path);
+                      promise?.catch(err => console.error(`Export ${format} failed:`, err));
                     });
                   }}
                 >

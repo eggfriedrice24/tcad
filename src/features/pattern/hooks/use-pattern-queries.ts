@@ -2,6 +2,7 @@ import type { PatternPieceData, PatternPieceId } from "@/types/pattern";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { resetPieceCounter } from "@/features/canvas/lib/piece-factory";
 import { canUndoRedo, createPatternPiece, deletePatternPiece, getAllPieces, getPiece, loadProject, newProject, redo, saveProject, undo, updatePatternPiece } from "@/lib/invoke";
 import { historyKeys, patternKeys } from "@/lib/query-keys";
 import { useProjectStore } from "@/stores/project-store";
@@ -99,8 +100,10 @@ export function useLoadProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (path: string) => loadProject(path),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: patternKeys.all });
+      const pieces = await queryClient.fetchQuery({ queryKey: patternKeys.lists(), queryFn: getAllPieces });
+      resetPieceCounter(pieces.length);
     },
   });
 }
@@ -111,6 +114,7 @@ export function useNewProject() {
     mutationFn: () => newProject(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patternKeys.all });
+      resetPieceCounter();
     },
   });
 }
