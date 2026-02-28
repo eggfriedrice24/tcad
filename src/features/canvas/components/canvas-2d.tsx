@@ -63,47 +63,21 @@ export function Canvas2D() {
     });
   }, []);
 
-  // Mutations
-  const createPieceMut = useCreatePiece();
-  const updatePieceMut = useUpdatePiece();
-  const deletePieceMut = useDeletePiece();
-  const undoMut = useUndo();
-  const redoMut = useRedo();
-  const saveMut = useSaveProject();
-  const loadMut = useLoadProject();
-  const newMut = useNewProject();
-  const undoMutRef = useRef(undoMut);
-  const redoMutRef = useRef(redoMut);
-  const saveMutRef = useRef(saveMut);
-  const loadMutRef = useRef(loadMut);
-  const newMutRef = useRef(newMut);
+  // Mutations — single ref object synced each render
+  const mutations = {
+    createPiece: useCreatePiece(),
+    updatePiece: useUpdatePiece(),
+    deletePiece: useDeletePiece(),
+    undo: useUndo(),
+    redo: useRedo(),
+    save: useSaveProject(),
+    load: useLoadProject(),
+    new: useNewProject(),
+  };
+  const mutRef = useRef(mutations);
   useEffect(() => {
-    undoMutRef.current = undoMut;
-  }, [undoMut]);
-  useEffect(() => {
-    redoMutRef.current = redoMut;
-  }, [redoMut]);
-  useEffect(() => {
-    saveMutRef.current = saveMut;
-  }, [saveMut]);
-  useEffect(() => {
-    loadMutRef.current = loadMut;
-  }, [loadMut]);
-  useEffect(() => {
-    newMutRef.current = newMut;
-  }, [newMut]);
-  const createPieceMutRef = useRef(createPieceMut);
-  const updatePieceMutRef = useRef(updatePieceMut);
-  const deletePieceMutRef = useRef(deletePieceMut);
-  useEffect(() => {
-    createPieceMutRef.current = createPieceMut;
-  }, [createPieceMut]);
-  useEffect(() => {
-    updatePieceMutRef.current = updatePieceMut;
-  }, [updatePieceMut]);
-  useEffect(() => {
-    deletePieceMutRef.current = deletePieceMut;
-  }, [deletePieceMut]);
+    mutRef.current = mutations;
+  });
 
   // Sync settled zoom to workspace store (debounced)
   const zoomTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -137,9 +111,9 @@ export function Canvas2D() {
       selectedIdsRef,
       hoveredIdRef,
       canvasRef,
-      createPiece: piece => createPieceMutRef.current.mutate(piece),
-      updatePiece: (id, piece) => updatePieceMutRef.current.mutate({ id, piece }),
-      deletePiece: id => deletePieceMutRef.current.mutate(id),
+      createPiece: piece => mutRef.current.createPiece.mutate(piece),
+      updatePiece: (id, piece) => mutRef.current.updatePiece.mutate({ id, piece }),
+      deletePiece: id => mutRef.current.deletePiece.mutate(id),
       selectPiece: id => useSelectionStore.getState().select(id),
       togglePiece: id => useSelectionStore.getState().toggle(id),
       clearSelection: () => useSelectionStore.getState().clear(),
@@ -223,10 +197,10 @@ export function Canvas2D() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) {
-          redoMutRef.current.mutate();
+          mutRef.current.redo.mutate();
         }
         else {
-          undoMutRef.current.mutate();
+          mutRef.current.undo.mutate();
         }
         return;
       }
@@ -236,7 +210,7 @@ export function Canvas2D() {
         e.preventDefault();
         const projectStore = useProjectStore.getState();
         if (!e.shiftKey && projectStore.path) {
-          saveMutRef.current.mutate(projectStore.path, {
+          mutRef.current.save.mutate(projectStore.path, {
             onSuccess: () => projectStore.setDirty(false),
           });
         }
@@ -246,7 +220,7 @@ export function Canvas2D() {
               return;
             const finalPath = filePath.endsWith(".tcad") ? filePath : `${filePath}.tcad`;
             const fileName = finalPath.split("/").pop()?.replace(".tcad", "") ?? "Untitled";
-            saveMutRef.current.mutate(finalPath, {
+            mutRef.current.save.mutate(finalPath, {
               onSuccess: () => projectStore.setProject(fileName, finalPath),
             });
           });
@@ -260,7 +234,7 @@ export function Canvas2D() {
         open({ filters: [{ name: "TCAD", extensions: ["tcad"] }], multiple: false }).then((path) => {
           if (path) {
             const name = path.split("/").pop()?.replace(".tcad", "") ?? "Untitled";
-            loadMutRef.current.mutate(path, {
+            mutRef.current.load.mutate(path, {
               onSuccess: () => {
                 useProjectStore.getState().setProject(name, path);
                 useSelectionStore.getState().clear();
@@ -274,7 +248,7 @@ export function Canvas2D() {
       // New (Ctrl+N)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
         e.preventDefault();
-        newMutRef.current.mutate(undefined, {
+        mutRef.current.new.mutate(undefined, {
           onSuccess: () => {
             useProjectStore.getState().reset();
             useSelectionStore.getState().clear();
