@@ -209,7 +209,13 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
     onPointerDown,
     onPointerMove,
     onPointerUp,
-    onDoubleClick: () => {},
+    onDoubleClick: (state: PointerState) => {
+      const hit = hitTestPieces(state.world, ctx.piecesRef.current, ctx.cameraRef.current.zoom);
+      if (hit) {
+        ctx.selectPiece(hit.id);
+        ctx.setActiveTool("node-edit");
+      }
+    },
     onKeyDown,
     drawOverlay,
     getCursor,
