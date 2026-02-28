@@ -102,6 +102,7 @@ export function Canvas2D() {
 
   // Track container size in a ref so resize + redraw happen in the same frame
   const sizeRef = useRef({ w: 0, h: 0 });
+  const needsCenterRef = useRef(true);
   useEffect(() => {
     const container = containerRef.current;
     if (!container)
@@ -109,6 +110,10 @@ export function Canvas2D() {
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       sizeRef.current = { w: width, h: height };
+      if (needsCenterRef.current && width > 0 && height > 0) {
+        needsCenterRef.current = false;
+        cameraRef.current = { x: width / 2, y: height / 2, zoom: 1 };
+      }
     });
     ro.observe(container);
     return () => ro.disconnect();
@@ -270,6 +275,8 @@ export function Canvas2D() {
           onSuccess: () => {
             useProjectStore.getState().reset();
             useSelectionStore.getState().clear();
+            const { w, h } = sizeRef.current;
+            cameraRef.current = { x: w / 2, y: h / 2, zoom: 1 };
           },
         });
         return;

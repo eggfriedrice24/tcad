@@ -1,7 +1,7 @@
 import type { Camera } from "./canvas-math";
 import type { CurveSegment, PatternPieceData, PatternPieceId, Point2D } from "@/types/pattern";
 
-import { applyTransform, formatValue, getGridStep } from "./canvas-math";
+import { applyTransform, displayY, formatValue, getGridStep } from "./canvas-math";
 
 // --- Colors ---
 const COLOR_GRID_MAJOR = "rgba(128, 128, 128, 0.25)";
@@ -305,7 +305,7 @@ export function drawRulers(
       ctx.save();
       ctx.translate(2 * dpr, sy);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText(formatValue(wy), 0, 0);
+      ctx.fillText(formatValue(displayY(wy)), 0, 0);
       ctx.restore();
     }
   }

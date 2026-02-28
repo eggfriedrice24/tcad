@@ -1,3 +1,4 @@
+import { displayY } from "@/features/canvas/lib/canvas-math";
 import { usePatternPieces } from "@/features/pattern/hooks/use-pattern-queries";
 import { useTool } from "@/hooks/use-tool";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -23,7 +24,7 @@ export function StatusBar() {
                   {" "}
                   Y:
                   {" "}
-                  {cursorWorld.y.toFixed(1)}
+                  {displayY(cursorWorld.y).toFixed(1)}
                 </span>
                 <span>
                   {zoomPercent}

@@ -3,6 +3,7 @@ import type { PatternPieceData } from "@/types/pattern";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
+import { displayY } from "@/features/canvas/lib/canvas-math";
 import { ReadOnlyRow } from "./read-only-row";
 
 type GeneralSectionProps = {
@@ -48,7 +49,7 @@ export function GeneralSection({ piece, name, seamAllowance, onNameChange, onSea
         </div>
       </div>
       <div className="mt-1 text-xs">
-        <ReadOnlyRow label="Origin" value={`${piece.origin.x.toFixed(1)}, ${piece.origin.y.toFixed(1)}`} />
+        <ReadOnlyRow label="Origin" value={`${piece.origin.x.toFixed(1)}, ${displayY(piece.origin.y).toFixed(1)}`} />
         <ReadOnlyRow label="Segments" value={String(piece.outline.length)} />
       </div>
     </div>

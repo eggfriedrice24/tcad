@@ -31,6 +31,11 @@ export function getGridStep(zoom: number): { major: number; minor: number } {
   return { major: step * 5, minor: step };
 }
 
+/** Negate Y for user-facing display (internal is screen Y-down, display is math Y-up) */
+export function displayY(y: number): number {
+  return -y;
+}
+
 export type Unit = "mm" | "cm" | "m" | "in";
 
 export function formatValue(n: number, unit?: Unit): string {
