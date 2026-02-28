@@ -26,6 +26,7 @@ const shortcutGroups: ShortcutGroup[] = [
     label: "Tools",
     items: [
       { keys: ["V"], description: "Select" },
+      { keys: ["A"], description: "Node Edit" },
       { keys: ["L"], description: "Line" },
       { keys: ["C"], description: "Curve" },
       { keys: ["P"], description: "Pen" },
@@ -39,6 +40,13 @@ const shortcutGroups: ShortcutGroup[] = [
       { keys: ["Esc"], description: "Cancel" },
       { keys: ["Del"], description: "Delete selected" },
       { keys: ["Dbl-click"], description: "Finish shape" },
+    ],
+  },
+  {
+    label: "Modifiers",
+    items: [
+      { keys: ["."], description: "Toggle snap" },
+      { keys: ["Shift"], description: "Constrain 45°" },
     ],
   },
   {
