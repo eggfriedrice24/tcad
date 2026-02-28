@@ -1,6 +1,6 @@
 [package]
 name = "tcad"
-version = "0.5.0"
+version = "0.6.0"
 description = "Desktop 2D/3D garment pattern CAD"
 authors = ["eggfriedrice24"]
 license = "MIT"
