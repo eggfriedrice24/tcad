@@ -2,7 +2,9 @@ import type { Camera } from "../canvas-math";
 import type { CanvasTool, PointerState, ToolContext } from "./tool-types";
 import type { CurveSegment, Point2D } from "@/types/pattern";
 
+import { constrainAngle } from "../constrain";
 import { createPieceFromOutline } from "../piece-factory";
+import { snapToGrid } from "../snap";
 import {
   beginOverlay,
   drawCloseIndicator,
@@ -10,6 +12,7 @@ import {
   drawPoint,
   drawPreviewBezier,
   drawPreviewLine,
+  drawSnapIndicator,
   endOverlay,
 } from "./overlay-renderer";
 
@@ -29,6 +32,7 @@ export function createPenTool(ctx: ToolContext): CanvasTool {
   let downPos: Point2D | null = null;
   let isDragging = false;
   let currentHandle: Point2D | null = null;
+  let lastSnap = { snapX: false, snapY: false };
 
   function reset() {
     penPoints = [];
@@ -37,6 +41,17 @@ export function createPenTool(ctx: ToolContext): CanvasTool {
     downPos = null;
     isDragging = false;
     currentHandle = null;
+    lastSnap = { snapX: false, snapY: false };
+  }
+
+  function process(world: Point2D, shiftKey: boolean): Point2D {
+    let pt = world;
+    if (shiftKey && penPoints.length > 0) {
+      pt = constrainAngle(penPoints[penPoints.length - 1].position, pt);
+    }
+    const result = snapToGrid(pt, ctx.cameraRef.current.zoom, ctx.snapEnabledRef.current);
+    lastSnap = { snapX: result.snapX, snapY: result.snapY };
+    return result.point;
   }
 
   function isNearFirstPoint(world: Point2D): boolean {
@@ -99,19 +114,21 @@ export function createPenTool(ctx: ToolContext): CanvasTool {
     if (state.button !== 0)
       return;
 
-    if (isNearFirstPoint(state.world)) {
+    const snapped = process(state.world, state.shiftKey);
+
+    if (isNearFirstPoint(snapped)) {
       finish(true);
       return;
     }
 
     isDown = true;
     isDragging = false;
-    downPos = { ...state.world };
+    downPos = snapped;
     currentHandle = null;
   }
 
   function onPointerMove(state: PointerState) {
-    mousePos = { ...state.world };
+    mousePos = process(state.world, state.shiftKey);
 
     if (isDown && downPos) {
       const dx = state.world.x - downPos.x;
@@ -120,6 +137,7 @@ export function createPenTool(ctx: ToolContext): CanvasTool {
 
       if (dist > DRAG_THRESHOLD / ctx.cameraRef.current.zoom) {
         isDragging = true;
+        // Handles are NOT snapped — only anchor placement snaps
         currentHandle = { ...state.world };
       }
     }
@@ -212,6 +230,11 @@ export function createPenTool(ctx: ToolContext): CanvasTool {
     // Close indicator
     if (mousePos && !isDown && isNearFirstPoint(mousePos)) {
       drawCloseIndicator(drawCtx, penPoints[0].position, camera.zoom);
+    }
+
+    // Snap indicator
+    if (mousePos && !isDown && (lastSnap.snapX || lastSnap.snapY)) {
+      drawSnapIndicator(drawCtx, mousePos, camera.zoom, lastSnap.snapX, lastSnap.snapY);
     }
 
     // Draw points and handles

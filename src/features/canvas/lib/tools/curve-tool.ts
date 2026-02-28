@@ -2,7 +2,9 @@ import type { Camera } from "../canvas-math";
 import type { CanvasTool, PointerState, ToolContext } from "./tool-types";
 import type { CurveSegment, Point2D } from "@/types/pattern";
 
+import { constrainAngle } from "../constrain";
 import { createPieceFromOutline } from "../piece-factory";
+import { snapToGrid } from "../snap";
 import {
   beginOverlay,
   drawCloseIndicator,
@@ -10,6 +12,7 @@ import {
   drawPoint,
   drawPreviewBezier,
   drawPreviewLine,
+  drawSnapIndicator,
   endOverlay,
 } from "./overlay-renderer";
 
@@ -26,6 +29,7 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
   let isDown = false;
   let downPos: Point2D | null = null;
   let currentHandle: Point2D | null = null;
+  let lastSnap = { snapX: false, snapY: false };
 
   function reset() {
     curvePoints = [];
@@ -33,6 +37,17 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
     isDown = false;
     downPos = null;
     currentHandle = null;
+    lastSnap = { snapX: false, snapY: false };
+  }
+
+  function process(world: Point2D, shiftKey: boolean): Point2D {
+    let pt = world;
+    if (shiftKey && curvePoints.length > 0) {
+      pt = constrainAngle(curvePoints[curvePoints.length - 1].position, pt);
+    }
+    const result = snapToGrid(pt, ctx.cameraRef.current.zoom, ctx.snapEnabledRef.current);
+    lastSnap = { snapX: result.snapX, snapY: result.snapY };
+    return result.point;
   }
 
   function isNearFirstPoint(world: Point2D): boolean {
@@ -107,21 +122,23 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
     if (state.button !== 0)
       return;
 
-    if (isNearFirstPoint(state.world)) {
+    const snapped = process(state.world, state.shiftKey);
+
+    if (isNearFirstPoint(snapped)) {
       finish(true);
       return;
     }
 
     isDown = true;
-    downPos = { ...state.world };
+    downPos = snapped;
     currentHandle = null;
   }
 
   function onPointerMove(state: PointerState) {
-    mousePos = { ...state.world };
+    mousePos = process(state.world, state.shiftKey);
 
     if (isDown && downPos) {
-      // Dragging: set control handle
+      // Dragging: set control handle (not snapped)
       currentHandle = { ...state.world };
     }
   }
@@ -221,6 +238,11 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
     // Close indicator
     if (mousePos && !isDown && isNearFirstPoint(mousePos)) {
       drawCloseIndicator(drawCtx, curvePoints[0].position, camera.zoom);
+    }
+
+    // Snap indicator
+    if (mousePos && !isDown && (lastSnap.snapX || lastSnap.snapY)) {
+      drawSnapIndicator(drawCtx, mousePos, camera.zoom, lastSnap.snapX, lastSnap.snapY);
     }
 
     // Draw points and handles

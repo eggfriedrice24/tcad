@@ -2,12 +2,15 @@ import type { Camera } from "../canvas-math";
 import type { CanvasTool, PointerState, ToolContext } from "./tool-types";
 import type { CurveSegment, Point2D } from "@/types/pattern";
 
+import { constrainAngle } from "../constrain";
 import { createPieceFromOutline } from "../piece-factory";
+import { snapToGrid } from "../snap";
 import {
   beginOverlay,
   drawCloseIndicator,
   drawPoint,
   drawPreviewLine,
+  drawSnapIndicator,
   endOverlay,
 } from "./overlay-renderer";
 
@@ -16,10 +19,24 @@ const CLOSE_THRESHOLD = 10; // pixels (screen space)
 export function createLineTool(ctx: ToolContext): CanvasTool {
   let points: Point2D[] = [];
   let mousePos: Point2D | null = null;
+  let lastSnap = { snapX: false, snapY: false };
 
   function reset() {
     points = [];
     mousePos = null;
+    lastSnap = { snapX: false, snapY: false };
+  }
+
+  function process(world: Point2D, shiftKey: boolean): Point2D {
+    let pt = world;
+    // Constrain angle to 45° if Shift held and we have a previous point
+    if (shiftKey && points.length > 0) {
+      pt = constrainAngle(points[points.length - 1], pt);
+    }
+    // Snap to grid
+    const result = snapToGrid(pt, ctx.cameraRef.current.zoom, ctx.snapEnabledRef.current);
+    lastSnap = { snapX: result.snapX, snapY: result.snapY };
+    return result.point;
   }
 
   function isNearFirstPoint(world: Point2D): boolean {
@@ -58,17 +75,19 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
     if (state.button !== 0)
       return;
 
+    const snapped = process(state.world, state.shiftKey);
+
     // Check close
-    if (isNearFirstPoint(state.world)) {
+    if (isNearFirstPoint(snapped)) {
       finish(true);
       return;
     }
 
-    points.push({ ...state.world });
+    points.push(snapped);
   }
 
   function onPointerMove(state: PointerState) {
-    mousePos = { ...state.world };
+    mousePos = process(state.world, state.shiftKey);
   }
 
   function onDoubleClick(_state: PointerState) {
@@ -108,6 +127,11 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
     // Draw close indicator
     if (mousePos && isNearFirstPoint(mousePos)) {
       drawCloseIndicator(drawCtx, points[0], camera.zoom);
+    }
+
+    // Draw snap indicator
+    if (mousePos && (lastSnap.snapX || lastSnap.snapY)) {
+      drawSnapIndicator(drawCtx, mousePos, camera.zoom, lastSnap.snapX, lastSnap.snapY);
     }
 
     // Draw points
