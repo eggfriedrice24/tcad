@@ -80,7 +80,7 @@ export function Viewport3D() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center size-full">
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
@@ -88,9 +88,9 @@ export function Viewport3D() {
 
   if (!pieces || pieces.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center size-full justify-center">
         <p className="text-sm text-muted-foreground">
-          No pieces — draw in 2D to see them here
+          No pieces - draw in 2D to see them here
         </p>
       </div>
     );
