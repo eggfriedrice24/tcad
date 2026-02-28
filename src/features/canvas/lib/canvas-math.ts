@@ -28,6 +28,16 @@ export function applyTransform(ctx: CanvasRenderingContext2D, camera: Camera) {
   ctx.setTransform(camera.zoom, 0, 0, camera.zoom, camera.x, camera.y);
 }
 
+export function getGridStep(zoom: number): { major: number; minor: number } {
+  const base = 10;
+  let step = base;
+  while (step * zoom < 20)
+    step *= 5;
+  while (step * zoom > 200)
+    step /= 5;
+  return { major: step * 5, minor: step };
+}
+
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 50;
 const ZOOM_FACTOR = 1.1;

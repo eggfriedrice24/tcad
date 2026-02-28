@@ -1,7 +1,7 @@
 import type { Camera } from "./canvas-math";
 import type { CurveSegment, PatternPieceData, PatternPieceId, Point2D } from "@/types/pattern";
 
-import { applyTransform } from "./canvas-math";
+import { applyTransform, getGridStep } from "./canvas-math";
 
 // --- Colors ---
 const COLOR_GRID_MAJOR = "rgba(128, 128, 128, 0.25)";
@@ -15,17 +15,6 @@ const COLOR_NOTCH = "#ec4899";
 const COLOR_FILL_SELECTED = "rgba(236, 72, 153, 0.06)";
 
 // --- Grid ---
-function getGridStep(zoom: number): { major: number; minor: number } {
-  // Adaptive grid: step doubles/halves so lines stay ~40-100px apart
-  const base = 10;
-  let step = base;
-  while (step * zoom < 20)
-    step *= 5;
-  while (step * zoom > 200)
-    step /= 5;
-  return { major: step * 5, minor: step };
-}
-
 export function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera, width: number, height: number) {
   const { major, minor } = getGridStep(camera.zoom);
 
