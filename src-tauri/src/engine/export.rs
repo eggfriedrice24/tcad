@@ -11,7 +11,8 @@ const SVG_MARGIN: f64 = 10.0;
 
 pub fn pieces_to_svg(pieces: &[PatternPieceData]) -> String {
     if pieces.is_empty() {
-        return r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>"#.to_string();
+        return r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>"#
+            .to_string();
     }
 
     let bbox = compute_pieces_bbox(pieces).expand_by(SVG_MARGIN);
@@ -71,7 +72,10 @@ pub fn pieces_to_svg(pieces: &[PatternPieceData]) -> String {
             writeln!(
                 svg,
                 r#"    <line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" stroke-width="0.5"/>"#,
-                nx, ny - 3.0, nx, ny + 3.0
+                nx,
+                ny - 3.0,
+                nx,
+                ny + 3.0
             )
             .unwrap();
         }
@@ -80,9 +84,7 @@ pub fn pieces_to_svg(pieces: &[PatternPieceData]) -> String {
         writeln!(
             svg,
             r#"    <text x="{}" y="{}" font-size="4" text-anchor="middle" fill="gray">{}</text>"#,
-            piece.origin.x,
-            piece.origin.y,
-            piece.name
+            piece.origin.x, piece.origin.y, piece.name
         )
         .unwrap();
 
@@ -303,14 +305,7 @@ fn write_dxf_arc(
     .unwrap();
 }
 
-fn sample_quadratic(
-    x0: f64,
-    y0: f64,
-    cx: f64,
-    cy: f64,
-    x1: f64,
-    y1: f64,
-) -> Vec<(f64, f64)> {
+fn sample_quadratic(x0: f64, y0: f64, cx: f64, cy: f64, x1: f64, y1: f64) -> Vec<(f64, f64)> {
     let steps = 16;
     (0..=steps)
         .map(|i| {
@@ -386,9 +381,12 @@ fn outline_to_polyline(origin: &Point2D, segments: &[CurveSegment]) -> Vec<(f64,
             }
             CurveSegment::QuadraticBezier { control, end } => {
                 let qpts = sample_quadratic(
-                    cx, cy,
-                    origin.x + control.x, origin.y + control.y,
-                    origin.x + end.x, origin.y + end.y,
+                    cx,
+                    cy,
+                    origin.x + control.x,
+                    origin.y + control.y,
+                    origin.x + end.x,
+                    origin.y + end.y,
                 );
                 // Skip first (duplicate of current pos)
                 pts.extend_from_slice(&qpts[1..]);
@@ -397,12 +395,20 @@ fn outline_to_polyline(origin: &Point2D, segments: &[CurveSegment]) -> Vec<(f64,
                     cy = last.1;
                 }
             }
-            CurveSegment::CubicBezier { control1, control2, end } => {
+            CurveSegment::CubicBezier {
+                control1,
+                control2,
+                end,
+            } => {
                 let cpts = sample_cubic(
-                    cx, cy,
-                    origin.x + control1.x, origin.y + control1.y,
-                    origin.x + control2.x, origin.y + control2.y,
-                    origin.x + end.x, origin.y + end.y,
+                    cx,
+                    cy,
+                    origin.x + control1.x,
+                    origin.y + control1.y,
+                    origin.x + control2.x,
+                    origin.y + control2.y,
+                    origin.x + end.x,
+                    origin.y + end.y,
                 );
                 pts.extend_from_slice(&cpts[1..]);
                 if let Some(&last) = cpts.last() {
@@ -410,7 +416,12 @@ fn outline_to_polyline(origin: &Point2D, segments: &[CurveSegment]) -> Vec<(f64,
                     cy = last.1;
                 }
             }
-            CurveSegment::Arc { center, radius, start_angle, end_angle } => {
+            CurveSegment::Arc {
+                center,
+                radius,
+                start_angle,
+                end_angle,
+            } => {
                 let steps = ((end_angle - start_angle).abs() / 0.1).ceil().max(4.0) as usize;
                 for i in 1..=steps {
                     let t = start_angle + (end_angle - start_angle) * (i as f64 / steps as f64);
@@ -429,12 +440,20 @@ fn outline_to_polyline(origin: &Point2D, segments: &[CurveSegment]) -> Vec<(f64,
     pts
 }
 
-pub fn pieces_to_pdf(pieces: &[PatternPieceData], path: &str, paper: PaperSize) -> Result<(), String> {
+pub fn pieces_to_pdf(
+    pieces: &[PatternPieceData],
+    path: &str,
+    paper: PaperSize,
+) -> Result<(), String> {
     use printpdf::*;
     use std::io::BufWriter;
 
-    fn mm(v: f64) -> Mm { Mm(v as f32) }
-    fn pt(x: f64, y: f64) -> Point { Point::new(mm(x), mm(y)) }
+    fn mm(v: f64) -> Mm {
+        Mm(v as f32)
+    }
+    fn pt(x: f64, y: f64) -> Point {
+        Point::new(mm(x), mm(y))
+    }
 
     let (page_w, page_h) = paper.dimensions_mm();
     let margin = 10.0_f64;
@@ -444,7 +463,8 @@ pub fn pieces_to_pdf(pieces: &[PatternPieceData], path: &str, paper: PaperSize) 
     if pieces.is_empty() {
         let (doc, _, _) = PdfDocument::new("TCAD Export", mm(page_w), mm(page_h), "Layer 1");
         let file = fs::File::create(path).map_err(|e| format!("File error: {e}"))?;
-        doc.save(&mut BufWriter::new(file)).map_err(|e| format!("PDF save error: {e}"))?;
+        doc.save(&mut BufWriter::new(file))
+            .map_err(|e| format!("PDF save error: {e}"))?;
         return Ok(());
     }
 
@@ -462,8 +482,10 @@ pub fn pieces_to_pdf(pieces: &[PatternPieceData], path: &str, paper: PaperSize) 
     let cols = (pattern_w / print_w).ceil().max(1.0) as usize;
     let rows = (pattern_h / print_h).ceil().max(1.0) as usize;
 
-    let (doc, first_page, first_layer) = PdfDocument::new("TCAD Export", mm(page_w), mm(page_h), "Layer 1");
-    let font = doc.add_builtin_font(BuiltinFont::Helvetica)
+    let (doc, first_page, first_layer) =
+        PdfDocument::new("TCAD Export", mm(page_w), mm(page_h), "Layer 1");
+    let font = doc
+        .add_builtin_font(BuiltinFont::Helvetica)
         .map_err(|e| format!("Font error: {e}"))?;
 
     for row in 0..rows {
@@ -502,7 +524,13 @@ pub fn pieces_to_pdf(pieces: &[PatternPieceData], path: &str, paper: PaperSize) 
 
             // Grid label
             let label = format!("{}{}", (b'A' + row as u8) as char, col + 1);
-            layer.use_text(&label, 8.0, mm(margin + 1.0), mm(page_h - margin - 6.0), &font);
+            layer.use_text(
+                &label,
+                8.0,
+                mm(margin + 1.0),
+                mm(page_h - margin - 6.0),
+                &font,
+            );
 
             // Draw outlines
             layer.set_outline_thickness(0.5);
@@ -526,7 +554,8 @@ pub fn pieces_to_pdf(pieces: &[PatternPieceData], path: &str, paper: PaperSize) 
     }
 
     let file = fs::File::create(path).map_err(|e| format!("File error: {e}"))?;
-    doc.save(&mut BufWriter::new(file)).map_err(|e| format!("PDF save error: {e}"))?;
+    doc.save(&mut BufWriter::new(file))
+        .map_err(|e| format!("PDF save error: {e}"))?;
     Ok(())
 }
 
@@ -570,9 +599,7 @@ fn expand_bbox_for_segment(bbox: &mut BBox2D, origin: &Point2D, seg: &CurveSegme
             bbox.expand_point(&Vec2::new(origin.x + control2.x, origin.y + control2.y));
             bbox.expand_point(&Vec2::new(origin.x + end.x, origin.y + end.y));
         }
-        CurveSegment::Arc {
-            center, radius, ..
-        } => {
+        CurveSegment::Arc { center, radius, .. } => {
             // Conservative bbox for arc
             bbox.expand_point(&Vec2::new(
                 origin.x + center.x - radius,

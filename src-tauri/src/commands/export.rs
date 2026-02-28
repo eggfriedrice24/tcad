@@ -1,14 +1,13 @@
 use crate::engine::export::{self, PaperSize};
 use crate::engine::pattern_piece;
 
-fn get_pieces_by_ids(piece_ids: &[String]) -> Result<Vec<crate::types::pattern::PatternPieceData>, String> {
+fn get_pieces_by_ids(
+    piece_ids: &[String],
+) -> Result<Vec<crate::types::pattern::PatternPieceData>, String> {
     if piece_ids.is_empty() {
         return pattern_piece::get_all();
     }
-    piece_ids
-        .iter()
-        .map(pattern_piece::get)
-        .collect()
+    piece_ids.iter().map(pattern_piece::get).collect()
 }
 
 #[tauri::command]

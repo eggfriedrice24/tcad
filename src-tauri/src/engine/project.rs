@@ -21,8 +21,8 @@ pub fn save_project(path: &str) -> Result<(), String> {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         pieces,
     };
-    let json = serde_json::to_string_pretty(&project)
-        .map_err(|e| format!("Serialize error: {e}"))?;
+    let json =
+        serde_json::to_string_pretty(&project).map_err(|e| format!("Serialize error: {e}"))?;
     fs::write(path, json).map_err(|e| format!("Write error: {e}"))?;
     Ok(())
 }
@@ -57,8 +57,8 @@ pub fn save_recovery(app_data_dir: &Path) -> Result<(), String> {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         pieces,
     };
-    let json = serde_json::to_string_pretty(&project)
-        .map_err(|e| format!("Serialize error: {e}"))?;
+    let json =
+        serde_json::to_string_pretty(&project).map_err(|e| format!("Serialize error: {e}"))?;
     fs::write(path, json).map_err(|e| format!("Write error: {e}"))?;
     Ok(())
 }

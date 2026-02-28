@@ -29,7 +29,9 @@ pub fn save_recovery(app_handle: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn check_recovery(app_handle: tauri::AppHandle) -> Result<Option<Vec<PatternPieceData>>, String> {
+pub fn check_recovery(
+    app_handle: tauri::AppHandle,
+) -> Result<Option<Vec<PatternPieceData>>, String> {
     let dir = app_handle
         .path()
         .app_data_dir()
@@ -52,8 +54,7 @@ pub fn restore_recovery(app_handle: tauri::AppHandle) -> Result<Vec<PatternPiece
         .path()
         .app_data_dir()
         .map_err(|e| format!("Path error: {e}"))?;
-    let pieces = project::check_recovery(&dir)?
-        .ok_or("No recovery data found")?;
+    let pieces = project::check_recovery(&dir)?.ok_or("No recovery data found")?;
     crate::engine::pattern_piece::replace_all(pieces.clone());
     crate::engine::history::clear();
     project::clear_recovery(&dir)?;
