@@ -19,6 +19,7 @@ import {
   RulerIcon,
   Scissor01Icon,
   SolidLine01Icon,
+  StraightEdgeIcon,
   TextIcon,
 } from "@hugeicons/core-free-icons";
 
@@ -88,6 +89,7 @@ export const toolGroups: ToolGroup[] = [
 
 export const modes: ModeDef[] = [
   { id: "snap", label: "Snap", shortcut: ".", icon: MagnetIcon },
+  { id: "rulers", label: "Rulers", shortcut: "Ctrl+R", icon: StraightEdgeIcon },
   { id: "grid-snap", label: "Grid Snap", icon: GridIcon, disabled: true },
   { id: "ortho", label: "Ortho Lock", icon: OrthogonalEdgeIcon, disabled: true },
   { id: "symmetry", label: "Symmetry", icon: FlipHorizontalIcon, disabled: true },

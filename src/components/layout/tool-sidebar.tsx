@@ -32,7 +32,7 @@ export function ToolSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { activeTool, setActiveTool } = useTool();
-  const { snapEnabled, toggleSnap } = useWorkspace();
+  const { snapEnabled, toggleSnap, rulersVisible, toggleRulers } = useWorkspace();
   const { data: pieces } = usePatternPieces();
   const createPiece = useCreatePiece();
   const deletePiece = useDeletePiece();
@@ -111,8 +111,8 @@ export function ToolSidebar() {
           <SidebarGroupContent>
             <div className={cn("grid gap-1", collapsed ? "grid-cols-1 px-0.5" : "grid-cols-3 px-2")}>
               {modes.map((mode) => {
-                const active = mode.id === "snap" ? snapEnabled : false;
-                const onClick = mode.id === "snap" ? toggleSnap : undefined;
+                const active = mode.id === "snap" ? snapEnabled : mode.id === "rulers" ? rulersVisible : false;
+                const onClick = mode.id === "snap" ? toggleSnap : mode.id === "rulers" ? toggleRulers : undefined;
                 return (
                   <Tooltip key={mode.id}>
                     <TooltipTrigger asChild>
