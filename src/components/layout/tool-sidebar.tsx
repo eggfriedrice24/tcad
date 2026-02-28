@@ -150,49 +150,87 @@ export function ToolSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <Separator className="mx-2 w-auto" />
-        <SidebarGroup>
-          <div className="flex items-center justify-between px-2">
-            <SidebarGroupLabel className="p-0">Pieces</SidebarGroupLabel>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6"
-              onClick={handleNewPiece}
-              disabled={createPiece.isPending}
-              title="New Piece"
-            >
-              <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
-            </Button>
-          </div>
-          <SidebarGroupContent>
-            {pieces && pieces.length > 0
-              ? (
-                  <SidebarMenu>
-                    {pieces.map(piece => (
-                      <SidebarMenuItem key={piece.id}>
-                        <SidebarMenuButton
-                          isActive={selectedIds.has(piece.id)}
+        <SidebarGroup className="py-1">
+          {collapsed
+            ? (
+                <div className="grid grid-cols-1 gap-1 px-0.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        onClick={handleNewPiece}
+                        disabled={createPiece.isPending}
+                      >
+                        <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="text-xs">New Piece</TooltipContent>
+                  </Tooltip>
+                  {pieces?.map(piece => (
+                    <Tooltip key={piece.id}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={selectedIds.has(piece.id) ? "secondary" : "ghost"}
+                          size="icon"
+                          className={cn("size-8 text-[10px] font-medium", selectedIds.has(piece.id) && "text-primary")}
                           onClick={() => select(piece.id)}
-                          className="group/piece cursor-pointer data-active:text-primary"
                         >
-                          <span className="truncate">{piece.name}</span>
-                          <button
-                            type="button"
-                            className="ml-auto opacity-0 transition-opacity hover:text-destructive group-hover/piece:opacity-100"
-                            onClick={e => handleDeletePiece(e, piece.id)}
-                            title="Delete piece"
-                          >
-                            <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
-                          </button>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                )
-              : (
-                  <p className="px-2 text-xs text-muted-foreground">No pieces yet</p>
-                )}
-          </SidebarGroupContent>
+                          {piece.name.charAt(0).toUpperCase()}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="text-xs">{piece.name}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              )
+            : (
+                <>
+                  <div className="flex items-center justify-between px-2">
+                    <SidebarGroupLabel className="p-0">Pieces</SidebarGroupLabel>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      onClick={handleNewPiece}
+                      disabled={createPiece.isPending}
+                      title="New Piece"
+                    >
+                      <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
+                    </Button>
+                  </div>
+                  <SidebarGroupContent>
+                    {pieces && pieces.length > 0
+                      ? (
+                          <SidebarMenu>
+                            {pieces.map(piece => (
+                              <SidebarMenuItem key={piece.id}>
+                                <SidebarMenuButton
+                                  isActive={selectedIds.has(piece.id)}
+                                  onClick={() => select(piece.id)}
+                                  className="group/piece cursor-pointer data-active:text-primary"
+                                >
+                                  <span className="truncate">{piece.name}</span>
+                                  <button
+                                    type="button"
+                                    className="ml-auto opacity-0 transition-opacity hover:text-destructive group-hover/piece:opacity-100"
+                                    onClick={e => handleDeletePiece(e, piece.id)}
+                                    title="Delete piece"
+                                  >
+                                    <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+                                  </button>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            ))}
+                          </SidebarMenu>
+                        )
+                      : (
+                          <p className="px-2 text-xs text-muted-foreground">No pieces yet</p>
+                        )}
+                  </SidebarGroupContent>
+                </>
+              )}
         </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
