@@ -1,22 +1,10 @@
-import type { Tool } from "@/stores/tool-store";
-
 import {
-  Cursor02Icon,
   Delete02Icon,
-  EaseCurveControlPointsIcon,
-  MagnetIcon,
-  MirrorIcon,
-  NodeEditIcon,
-  PenToolAddIcon,
   PlusSignIcon,
-  RotateClockwiseIcon,
-  RulerIcon,
-  Scissor01Icon,
-  SolidLine01Icon,
-  TextIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+import { modes, toolGroups } from "@/components/layout/tool-defs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -39,30 +27,6 @@ import { useSelection } from "@/hooks/use-selection";
 import { useTool } from "@/hooks/use-tool";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
-
-type ToolDef = {
-  id: Tool;
-  label: string;
-  shortcut: string;
-  icon: typeof Cursor02Icon;
-  disabled?: boolean;
-};
-
-const tools: ToolDef[] = [
-  { id: "select", label: "Select", shortcut: "V", icon: Cursor02Icon },
-  { id: "node-edit", label: "Node Edit", shortcut: "A", icon: NodeEditIcon },
-  { id: "pen", label: "Pen", shortcut: "P", icon: PenToolAddIcon },
-  { id: "line", label: "Line", shortcut: "L", icon: SolidLine01Icon },
-  { id: "curve", label: "Curve", shortcut: "C", icon: EaseCurveControlPointsIcon },
-  { id: "measure", label: "Measure", shortcut: "M", icon: RulerIcon },
-];
-
-const futureTools: Omit<ToolDef, "id" | "shortcut">[] = [
-  { label: "Scissors", icon: Scissor01Icon, disabled: true },
-  { label: "Text", icon: TextIcon, disabled: true },
-  { label: "Mirror", icon: MirrorIcon, disabled: true },
-  { label: "Rotate", icon: RotateClockwiseIcon, disabled: true },
-];
 
 export function ToolSidebar() {
   const { state } = useSidebar();
@@ -101,76 +65,87 @@ export function ToolSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+        {toolGroups.map(group => (
+          <SidebarGroup key={group.label} className="py-1">
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className={cn("grid gap-1", collapsed ? "grid-cols-1 px-0.5" : "grid-cols-3 px-2")}>
+                {group.tools.map(tool => (
+                  <Tooltip key={tool.label}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={tool.id && activeTool === tool.id ? "secondary" : "ghost"}
+                        size="icon"
+                        className={cn("size-8", !tool.disabled && "cursor-pointer")}
+                        disabled={tool.disabled}
+                        onClick={tool.id ? () => setActiveTool(tool.id!) : undefined}
+                      >
+                        <HugeiconsIcon
+                          icon={tool.icon}
+                          size={16}
+                          strokeWidth={2}
+                          className={tool.id && activeTool === tool.id ? "text-primary" : ""}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side={collapsed ? "right" : "bottom"} className="text-xs">
+                      {tool.label}
+                      {tool.shortcut
+                        ? (
+                            <kbd className="ml-1.5 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                              {tool.shortcut}
+                            </kbd>
+                          )
+                        : tool.disabled && (
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">Soon</span>
+                        )}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+        <SidebarGroup className="py-1">
+          <SidebarGroupLabel>Modes</SidebarGroupLabel>
           <SidebarGroupContent>
             <div className={cn("grid gap-1", collapsed ? "grid-cols-1 px-0.5" : "grid-cols-3 px-2")}>
-              {tools.map(tool => (
-                <Tooltip key={tool.id}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === tool.id ? "secondary" : "ghost"}
-                      size="icon"
-                      className="size-8 cursor-pointer"
-                      onClick={() => setActiveTool(tool.id)}
-                    >
-                      <HugeiconsIcon
-                        icon={tool.icon}
-                        size={16}
-                        strokeWidth={2}
-                        className={activeTool === tool.id ? "text-primary" : ""}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={collapsed ? "right" : "bottom"} className="text-xs">
-                    {tool.label}
-                    <kbd className="ml-1.5 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
-                      {tool.shortcut}
-                    </kbd>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-              {!collapsed && futureTools.map(tool => (
-                <Tooltip key={tool.label}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      disabled
-                    >
-                      <HugeiconsIcon icon={tool.icon} size={16} strokeWidth={2} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    {tool.label}
-                    <span className="ml-1.5 text-[10px] text-muted-foreground">Soon</span>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={snapEnabled ? "secondary" : "ghost"}
-                    size="icon"
-                    className="size-8 cursor-pointer"
-                    onClick={toggleSnap}
-                  >
-                    <HugeiconsIcon
-                      icon={MagnetIcon}
-                      size={16}
-                      strokeWidth={2}
-                      className={snapEnabled ? "text-primary" : ""}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side={collapsed ? "right" : "bottom"} className="text-xs">
-                  Snap
-                  <kbd className="ml-1.5 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
-                    .
-                  </kbd>
-                </TooltipContent>
-              </Tooltip>
+              {modes.map((mode) => {
+                const active = mode.id === "snap" ? snapEnabled : false;
+                const onClick = mode.id === "snap" ? toggleSnap : undefined;
+                return (
+                  <Tooltip key={mode.id}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={active ? "secondary" : "ghost"}
+                        size="icon"
+                        className={cn("size-8", !mode.disabled && "cursor-pointer")}
+                        disabled={mode.disabled}
+                        onClick={onClick}
+                      >
+                        <HugeiconsIcon
+                          icon={mode.icon}
+                          size={16}
+                          strokeWidth={2}
+                          className={active ? "text-primary" : ""}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side={collapsed ? "right" : "bottom"} className="text-xs">
+                      {mode.label}
+                      {mode.shortcut
+                        ? (
+                            <kbd className="ml-1.5 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                              {mode.shortcut}
+                            </kbd>
+                          )
+                        : mode.disabled && (
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">Soon</span>
+                        )}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
