@@ -12,7 +12,7 @@ import { useToolStore } from "@/stores/tool-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 
 import { createCamera, screenToWorld, zoomAtPoint } from "../lib/canvas-math";
-import { clearCanvas, drawGrid, drawPieces } from "../lib/canvas-renderer";
+import { clearCanvas, drawGrid, drawPieces, drawRulers } from "../lib/canvas-renderer";
 import { createTool } from "../lib/tools/create-tool";
 
 const TOOL_SHORTCUTS: Record<string, Tool> = {
@@ -41,10 +41,22 @@ export function Canvas2D() {
   const spaceHeldRef = useRef(false);
   const toolRef = useRef<CanvasTool | null>(null);
   const snapEnabledRef = useRef(useWorkspaceStore.getState().snapEnabled);
+  const rulersVisibleRef = useRef(useWorkspaceStore.getState().rulersVisible);
   useEffect(() => {
     return useWorkspaceStore.subscribe((state) => {
       snapEnabledRef.current = state.snapEnabled;
+      rulersVisibleRef.current = state.rulersVisible;
     });
+  }, []);
+
+  const cursorScreenRef = useRef({ x: 0, y: 0 });
+  const isDarkRef = useRef(document.documentElement.classList.contains("dark"));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      isDarkRef.current = document.documentElement.classList.contains("dark");
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   const { data: pieces } = usePatternPieces();
@@ -173,6 +185,12 @@ export function Canvas2D() {
       // Draw tool overlay
       toolRef.current?.drawOverlay(ctx!, dprCam);
 
+      // Rulers (last — opaque background covers edges)
+      if (rulersVisibleRef.current) {
+        const cursor = cursorScreenRef.current;
+        drawRulers(ctx!, dprCam, bufW, bufH, cursor.x, cursor.y, dpr, isDarkRef.current);
+      }
+
       rafRef.current = requestAnimationFrame(render);
     }
 
@@ -254,6 +272,13 @@ export function Canvas2D() {
             useSelectionStore.getState().clear();
           },
         });
+        return;
+      }
+
+      // Toggle rulers (Ctrl+R)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        useWorkspaceStore.getState().toggleRulers();
         return;
       }
 
@@ -353,6 +378,8 @@ export function Canvas2D() {
     const rect = canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
+    const dpr = window.devicePixelRatio || 1;
+    cursorScreenRef.current = { x: sx * dpr, y: sy * dpr };
     const world = screenToWorld(cameraRef.current, sx, sy);
     useWorkspaceStore.getState().setCursorWorld({ x: Math.round(world.x * 10) / 10, y: Math.round(world.y * 10) / 10 });
 

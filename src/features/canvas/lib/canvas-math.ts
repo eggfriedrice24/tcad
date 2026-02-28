@@ -31,6 +31,13 @@ export function getGridStep(zoom: number): { major: number; minor: number } {
   return { major: step * 5, minor: step };
 }
 
+export type Unit = "mm" | "cm" | "m" | "in";
+
+export function formatValue(n: number, unit?: Unit): string {
+  const s = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return unit ? `${s} ${unit}` : s;
+}
+
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 50;
 const ZOOM_FACTOR = 1.1;

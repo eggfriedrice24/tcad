@@ -1,7 +1,7 @@
 import type { Camera } from "../canvas-math";
 import type { Point2D } from "@/types/pattern";
 
-import { applyTransform } from "../canvas-math";
+import { applyTransform, formatValue } from "../canvas-math";
 
 const COLOR_POINT = "#ec4899";
 const COLOR_POINT_FIRST = "#f472b6";
@@ -78,7 +78,7 @@ export function drawDistanceLabel(ctx: CanvasRenderingContext2D, from: Point2D, 
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  const label = `${dist.toFixed(1)} mm`;
+  const label = formatValue(dist, "mm");
 
   const midX = (from.x + to.x) / 2;
   const midY = (from.y + to.y) / 2;

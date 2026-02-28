@@ -1,7 +1,7 @@
 import type { Camera } from "./canvas-math";
 import type { CurveSegment, PatternPieceData, PatternPieceId, Point2D } from "@/types/pattern";
 
-import { applyTransform, getGridStep } from "./canvas-math";
+import { applyTransform, formatValue, getGridStep } from "./canvas-math";
 
 // --- Colors ---
 const COLOR_GRID_MAJOR = "rgba(128, 128, 128, 0.25)";
@@ -207,6 +207,133 @@ export function drawPieces(
   }
 
   ctx.restore();
+}
+
+// --- Rulers ---
+const RULER_SIZE = 24; // CSS px
+const COLOR_CURSOR_INDICATOR = "#ec4899";
+
+export function drawRulers(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  bufW: number,
+  bufH: number,
+  cursorScreenX: number,
+  cursorScreenY: number,
+  dpr: number,
+  isDark: boolean,
+) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  const rulerPx = RULER_SIZE * dpr;
+  const { major, minor } = getGridStep(camera.zoom / dpr);
+
+  const bgColor = isDark ? "#1a1a1a" : "#f5f5f5";
+  const textColor = isDark ? "#a1a1aa" : "#71717a";
+  const tickColor = isDark ? "#52525b" : "#a1a1aa";
+  const borderColor = isDark ? "#3f3f46" : "#d4d4d8";
+
+  const fontSize = Math.round(9 * dpr);
+  ctx.font = `${fontSize}px sans-serif`;
+
+  // Visible world bounds
+  const left = -camera.x / (camera.zoom / dpr) / dpr;
+  const right = (bufW - camera.x) / (camera.zoom / dpr) / dpr;
+  const top = -camera.y / (camera.zoom / dpr) / dpr;
+  const bottom = (bufH - camera.y) / (camera.zoom / dpr) / dpr;
+
+  const majorTickLen = 8 * dpr;
+  const minorTickLen = 4 * dpr;
+  const triSize = 4 * dpr;
+
+  // --- Horizontal ruler (top) ---
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(rulerPx, 0, bufW - rulerPx, rulerPx);
+
+  ctx.fillStyle = textColor;
+  ctx.strokeStyle = tickColor;
+  ctx.lineWidth = 1;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  const startMinorX = Math.floor(left / minor) * minor;
+  for (let wx = startMinorX; wx <= right; wx += minor) {
+    const sx = wx * camera.zoom + camera.x;
+    if (sx < rulerPx || sx > bufW)
+      continue;
+    const isMajor = Math.abs(wx % major) < minor * 0.01;
+    ctx.beginPath();
+    ctx.moveTo(sx, rulerPx - (isMajor ? majorTickLen : minorTickLen));
+    ctx.lineTo(sx, rulerPx);
+    ctx.stroke();
+    if (isMajor) {
+      ctx.fillText(formatValue(wx), sx, 2 * dpr);
+    }
+  }
+
+  // Cursor indicator (horizontal)
+  if (cursorScreenX >= rulerPx && cursorScreenX <= bufW) {
+    ctx.fillStyle = COLOR_CURSOR_INDICATOR;
+    ctx.beginPath();
+    ctx.moveTo(cursorScreenX, rulerPx);
+    ctx.lineTo(cursorScreenX - triSize, rulerPx - triSize);
+    ctx.lineTo(cursorScreenX + triSize, rulerPx - triSize);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // --- Vertical ruler (left) ---
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, rulerPx, rulerPx, bufH - rulerPx);
+
+  ctx.fillStyle = textColor;
+  ctx.strokeStyle = tickColor;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  const startMinorY = Math.floor(top / minor) * minor;
+  for (let wy = startMinorY; wy <= bottom; wy += minor) {
+    const sy = wy * camera.zoom + camera.y;
+    if (sy < rulerPx || sy > bufH)
+      continue;
+    const isMajor = Math.abs(wy % major) < minor * 0.01;
+    ctx.beginPath();
+    ctx.moveTo(rulerPx - (isMajor ? majorTickLen : minorTickLen), sy);
+    ctx.lineTo(rulerPx, sy);
+    ctx.stroke();
+    if (isMajor) {
+      ctx.save();
+      ctx.translate(2 * dpr, sy);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(formatValue(wy), 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // Cursor indicator (vertical)
+  if (cursorScreenY >= rulerPx && cursorScreenY <= bufH) {
+    ctx.fillStyle = COLOR_CURSOR_INDICATOR;
+    ctx.beginPath();
+    ctx.moveTo(rulerPx, cursorScreenY);
+    ctx.lineTo(rulerPx - triSize, cursorScreenY - triSize);
+    ctx.lineTo(rulerPx - triSize, cursorScreenY + triSize);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // --- Corner square ---
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, rulerPx, rulerPx);
+
+  // --- Border lines ---
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rulerPx, 0);
+  ctx.lineTo(rulerPx, bufH);
+  ctx.moveTo(0, rulerPx);
+  ctx.lineTo(bufW, rulerPx);
+  ctx.stroke();
 }
 
 export function clearCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
