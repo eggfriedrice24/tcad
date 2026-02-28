@@ -10,6 +10,11 @@ export const patternKeys = {
   seamAllowance: (id: PatternPieceId, mm: number) => [...patternKeys.all, "seam-allowance", id, mm] as const,
 };
 
+export const historyKeys = {
+  all: ["history"] as const,
+  canUndoRedo: () => [...historyKeys.all, "can-undo-redo"] as const,
+};
+
 export const meshKeys = {
   all: ["mesh"] as const,
   generate: (ids: PatternPieceId[]) => [...meshKeys.all, "generate", ...ids] as const,

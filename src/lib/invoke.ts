@@ -43,6 +43,56 @@ export function exportSvg(pieceIds: PatternPieceId[]): Promise<string> {
   return invoke("export_svg", { pieceIds });
 }
 
+export function exportSvgToFile(pieceIds: PatternPieceId[], path: string): Promise<void> {
+  return invoke("export_svg_to_file", { pieceIds, path });
+}
+
 export function exportDxf(pieceIds: PatternPieceId[], path: string): Promise<void> {
   return invoke("export_dxf", { pieceIds, path });
+}
+
+export function exportPdf(pieceIds: PatternPieceId[], path: string, paperSize: string = "a4"): Promise<void> {
+  return invoke("export_pdf", { pieceIds, path, paperSize });
+}
+
+// Project
+export function saveProject(path: string): Promise<void> {
+  return invoke("save_project", { path });
+}
+
+export function loadProject(path: string): Promise<PatternPieceData[]> {
+  return invoke("load_project", { path });
+}
+
+export function newProject(): Promise<void> {
+  return invoke("new_project");
+}
+
+export function saveRecovery(): Promise<void> {
+  return invoke("save_recovery");
+}
+
+export function checkRecovery(): Promise<PatternPieceData[] | null> {
+  return invoke("check_recovery");
+}
+
+export function clearRecovery(): Promise<void> {
+  return invoke("clear_recovery");
+}
+
+export function restoreRecovery(): Promise<PatternPieceData[]> {
+  return invoke("restore_recovery");
+}
+
+// History (undo/redo)
+export function undo(): Promise<void> {
+  return invoke("undo");
+}
+
+export function redo(): Promise<void> {
+  return invoke("redo");
+}
+
+export function canUndoRedo(): Promise<[boolean, boolean]> {
+  return invoke("can_undo_redo");
 }
