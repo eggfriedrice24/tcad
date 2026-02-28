@@ -4,7 +4,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 
 export function StatusBar() {
   const { activeTool } = useTool();
-  const { viewMode, cursorWorld, zoomPercent } = useWorkspace();
+  const { viewMode, cursorWorld, zoomPercent, snapEnabled } = useWorkspace();
   const { data: pieces } = usePatternPieces();
 
   const show2dInfo = viewMode !== "3d";
@@ -40,6 +40,7 @@ export function StatusBar() {
             )}
       </div>
       <div className="ml-auto flex items-center gap-3">
+        {show2dInfo && snapEnabled && <span className="font-medium text-blue-500">SNAP</span>}
         {show2dInfo && <span className="capitalize">{activeTool}</span>}
         <span className="uppercase">{viewMode}</span>
       </div>

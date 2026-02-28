@@ -37,6 +37,7 @@ import { createDefaultRectangle } from "@/features/canvas/lib/piece-factory";
 import { useCreatePiece, useDeletePiece, usePatternPieces } from "@/features/pattern/hooks/use-pattern-queries";
 import { useSelection } from "@/hooks/use-selection";
 import { useTool } from "@/hooks/use-tool";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
 
 type ToolDef = {
@@ -49,6 +50,7 @@ type ToolDef = {
 
 const tools: ToolDef[] = [
   { id: "select", label: "Select", shortcut: "V", icon: Cursor02Icon },
+  { id: "node-edit", label: "Node Edit", shortcut: "A", icon: NodeEditIcon },
   { id: "pen", label: "Pen", shortcut: "P", icon: PenToolAddIcon },
   { id: "line", label: "Line", shortcut: "L", icon: SolidLine01Icon },
   { id: "curve", label: "Curve", shortcut: "C", icon: EaseCurveControlPointsIcon },
@@ -56,18 +58,17 @@ const tools: ToolDef[] = [
 ];
 
 const futureTools: Omit<ToolDef, "id" | "shortcut">[] = [
-  { label: "Node Edit", icon: NodeEditIcon, disabled: true },
   { label: "Scissors", icon: Scissor01Icon, disabled: true },
   { label: "Text", icon: TextIcon, disabled: true },
   { label: "Mirror", icon: MirrorIcon, disabled: true },
   { label: "Rotate", icon: RotateClockwiseIcon, disabled: true },
-  { label: "Snap", icon: MagnetIcon, disabled: true },
 ];
 
 export function ToolSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { activeTool, setActiveTool } = useTool();
+  const { snapEnabled, toggleSnap } = useWorkspace();
   const { data: pieces } = usePatternPieces();
   const createPiece = useCreatePiece();
   const deletePiece = useDeletePiece();
@@ -147,6 +148,29 @@ export function ToolSidebar() {
                   </TooltipContent>
                 </Tooltip>
               ))}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={snapEnabled ? "secondary" : "ghost"}
+                    size="icon"
+                    className="size-8 cursor-pointer"
+                    onClick={toggleSnap}
+                  >
+                    <HugeiconsIcon
+                      icon={MagnetIcon}
+                      size={16}
+                      strokeWidth={2}
+                      className={snapEnabled ? "text-primary" : ""}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={collapsed ? "right" : "bottom"} className="text-xs">
+                  Snap
+                  <kbd className="ml-1.5 rounded border bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                    .
+                  </kbd>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
