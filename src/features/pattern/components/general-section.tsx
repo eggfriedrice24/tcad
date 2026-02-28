@@ -3,6 +3,7 @@ import type { PatternPieceData } from "@/types/pattern";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
+import { ReadOnlyRow } from "./read-only-row";
 
 type GeneralSectionProps = {
   piece: PatternPieceData;
@@ -14,15 +15,6 @@ type GeneralSectionProps = {
   nameError?: string;
   seamError?: string;
 };
-
-function ReadOnlyRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between px-2 py-0.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span>{value}</span>
-    </div>
-  );
-}
 
 export function GeneralSection({ piece, name, seamAllowance, onNameChange, onSeamChange, onBlur, nameError, seamError }: GeneralSectionProps) {
   return (
