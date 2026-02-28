@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Tool = "select" | "pen" | "line" | "curve" | "measure";
+export type Tool = "select" | "node-edit" | "pen" | "line" | "curve" | "measure";
 
 type ToolStore = {
   activeTool: Tool;
