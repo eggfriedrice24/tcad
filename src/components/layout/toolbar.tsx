@@ -74,6 +74,8 @@ const shortcutGroups: ShortcutGroup[] = [
       { keys: ["Scroll"], description: "Zoom" },
       { keys: ["Mid-click"], description: "Pan" },
       { keys: ["Shift", "Click"], description: "Multi-select" },
+      { keys: ["Alt", "Drag"], description: "Duplicate" },
+      { keys: ["Ctrl", "Alt", "Drag"], description: "Mirror duplicate" },
     ],
   },
 ];

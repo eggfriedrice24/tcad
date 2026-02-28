@@ -2,6 +2,7 @@ import type { PatternPieceData } from "@/types/pattern";
 
 import { useCallback, useState } from "react";
 
+import { mirrorPieceX } from "@/features/canvas/lib/piece-factory";
 import { useUpdatePiece } from "@/features/pattern/hooks/use-pattern-queries";
 
 import { extractProperties, piecePropertiesSchema } from "../lib/piece-schema";
@@ -46,9 +47,10 @@ function PiecePropertiesFormInner({ piece }: { piece: PatternPieceData }) {
 
   const handleMirrorChange = useCallback((mirror: boolean) => {
     setValues(prev => ({ ...prev, mirror }));
-    // Save immediately for toggles
+    // Mirror the geometry and toggle the flag
+    const mirrored = mirrorPieceX(piece);
     const updated: PatternPieceData = {
-      ...piece,
+      ...mirrored,
       metadata: { ...piece.metadata, mirror },
     };
     updatePiece.mutate({ id: piece.id, piece: updated });

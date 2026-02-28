@@ -4,6 +4,7 @@ import type { CurveSegment, PatternPieceData, Point2D } from "@/types/pattern";
 
 import { applyTransform } from "../canvas-math";
 import { hitTestPieces } from "../hit-test";
+import { duplicatePiece, mirrorPieceX } from "../piece-factory";
 
 function offsetSegment(seg: CurveSegment, dx: number, dy: number): CurveSegment {
   switch (seg.type) {
@@ -54,6 +55,8 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
   let dragStart: Point2D | null = null;
   let dragOffset: Point2D = { x: 0, y: 0 };
   let hasMoved = false;
+  let isDuplicating = false;
+  let isMirroring = false;
 
   function onPointerDown(state: PointerState) {
     if (state.button !== 0)
@@ -64,13 +67,18 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
     if (hit) {
       const alreadySelected = ctx.selectedIdsRef.current.has(hit.id);
 
-      if (state.shiftKey) {
+      // When Alt is held, skip Shift toggle logic to avoid deselecting during duplicate drag
+      if (!state.altKey && state.shiftKey) {
         ctx.togglePiece(hit.id);
       }
       else if (!alreadySelected) {
         ctx.selectPiece(hit.id);
       }
       // If already selected without shift, keep current selection (allows multi-drag)
+
+      // Detect duplicate/mirror modifiers
+      isDuplicating = state.altKey;
+      isMirroring = state.altKey && state.ctrlKey;
 
       // Start drag with all currently selected pieces
       isDragging = true;
@@ -113,10 +121,32 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
       const dx = dragOffset.x;
       const dy = dragOffset.y;
 
-      for (const id of dragIds) {
-        const piece = ctx.piecesRef.current.find(p => p.id === id);
-        if (piece) {
-          ctx.updatePiece(piece.id, offsetPiece(piece, dx, dy));
+      if (isDuplicating) {
+        const newIds: string[] = [];
+        for (const id of dragIds) {
+          const piece = ctx.piecesRef.current.find(p => p.id === id);
+          if (!piece)
+            continue;
+          const base = isMirroring ? mirrorPieceX(piece) : piece;
+          const clone = duplicatePiece(base);
+          const moved = offsetPiece(clone, dx, dy);
+          ctx.createPiece(moved);
+          newIds.push(moved.id);
+        }
+        // Select the new clones
+        if (newIds.length > 0) {
+          ctx.selectPiece(newIds[0]);
+          for (let i = 1; i < newIds.length; i++) {
+            ctx.togglePiece(newIds[i]);
+          }
+        }
+      }
+      else {
+        for (const id of dragIds) {
+          const piece = ctx.piecesRef.current.find(p => p.id === id);
+          if (piece) {
+            ctx.updatePiece(piece.id, offsetPiece(piece, dx, dy));
+          }
         }
       }
     }
@@ -126,6 +156,8 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
     dragStart = null;
     dragOffset = { x: 0, y: 0 };
     hasMoved = false;
+    isDuplicating = false;
+    isMirroring = false;
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -159,10 +191,13 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
       if (!piece)
         continue;
 
-      drawCtx.beginPath();
-      drawCtx.moveTo(piece.origin.x + dx, piece.origin.y + dy);
+      // Use mirrored shape for mirror-duplicate preview
+      const ghost = isMirroring ? mirrorPieceX(piece) : piece;
 
-      for (const seg of piece.outline) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(ghost.origin.x + dx, ghost.origin.y + dy);
+
+      for (const seg of ghost.outline) {
         switch (seg.type) {
           case "Line":
             drawCtx.lineTo(seg.end.x + dx, seg.end.y + dy);
@@ -199,7 +234,7 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
 
   function getCursor(): string {
     if (isDragging && hasMoved)
-      return "grabbing";
+      return isDuplicating ? "copy" : "grabbing";
     const hit = ctx.hoveredIdRef.current;
     return hit ? "pointer" : "default";
   }
@@ -223,6 +258,8 @@ export function createSelectTool(ctx: ToolContext): CanvasTool {
       isDragging = false;
       dragIds = new Set();
       dragStart = null;
+      isDuplicating = false;
+      isMirroring = false;
     },
   };
 }
