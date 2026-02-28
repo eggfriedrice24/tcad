@@ -54,6 +54,7 @@ const shortcutGroups: ShortcutGroup[] = [
     label: "Modifiers",
     items: [
       { keys: ["."], description: "Toggle snap" },
+      { keys: ["Ctrl", "R"], description: "Toggle rulers" },
       { keys: ["Shift"], description: "Constrain 45°" },
     ],
   },
