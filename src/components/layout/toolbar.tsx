@@ -1,14 +1,20 @@
 import type { ViewMode } from "@/stores/workspace-store";
 
-import { KeyboardIcon } from "@hugeicons/core-free-icons";
+import { Download04Icon, KeyboardIcon, RedoIcon, UndoIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { save } from "@tauri-apps/plugin-dialog";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCanUndoRedo, useRedo, useUndo } from "@/features/pattern/hooks/use-pattern-queries";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { exportDxf, exportPdf, exportSvgToFile } from "@/lib/invoke";
+import { useProjectStore } from "@/stores/project-store";
 
 const viewModes: { id: ViewMode; label: string }[] = [
   { id: "2d", label: "2D" },
@@ -40,6 +46,8 @@ const shortcutGroups: ShortcutGroup[] = [
       { keys: ["Esc"], description: "Cancel" },
       { keys: ["Del"], description: "Delete selected" },
       { keys: ["Dbl-click"], description: "Finish shape" },
+      { keys: ["Ctrl", "Z"], description: "Undo" },
+      { keys: ["Ctrl", "Shift", "Z"], description: "Redo" },
     ],
   },
   {
@@ -47,6 +55,15 @@ const shortcutGroups: ShortcutGroup[] = [
     items: [
       { keys: ["."], description: "Toggle snap" },
       { keys: ["Shift"], description: "Constrain 45°" },
+    ],
+  },
+  {
+    label: "File",
+    items: [
+      { keys: ["Ctrl", "S"], description: "Save" },
+      { keys: ["Ctrl", "Shift", "S"], description: "Save As" },
+      { keys: ["Ctrl", "O"], description: "Open" },
+      { keys: ["Ctrl", "N"], description: "New" },
     ],
   },
   {
@@ -70,10 +87,49 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 export function Toolbar() {
   const { viewMode, setViewMode } = useWorkspace();
+  const { name, dirty } = useProjectStore();
+  const undoMut = useUndo();
+  const redoMut = useRedo();
+  const { data: undoRedoState } = useCanUndoRedo();
+  const canUndo = undoRedoState?.[0] ?? false;
+  const canRedo = undoRedoState?.[1] ?? false;
 
   return (
     <header className="flex h-10 shrink-0 items-center border-b px-2">
       <SidebarTrigger />
+      <span className="ml-2 text-xs text-muted-foreground">
+        {name}
+        {dirty && <span className="ml-1 text-pink-500">*</span>}
+      </span>
+      <Separator orientation="vertical" className="mx-2 my-auto h-4" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-7" disabled={!canUndo} onClick={() => undoMut.mutate()}>
+            <HugeiconsIcon icon={UndoIcon} size={16} strokeWidth={2} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>
+            Undo
+            {" "}
+            <Kbd>Ctrl+Z</Kbd>
+          </p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-7" disabled={!canRedo} onClick={() => redoMut.mutate()}>
+            <HugeiconsIcon icon={RedoIcon} size={16} strokeWidth={2} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>
+            Redo
+            {" "}
+            <Kbd>Ctrl+Shift+Z</Kbd>
+          </p>
+        </TooltipContent>
+      </Tooltip>
       <div className="flex flex-1 items-center justify-center gap-1">
         {viewModes.map(mode => (
           <Button
@@ -87,6 +143,40 @@ export function Toolbar() {
         ))}
       </div>
       <div className="flex items-center gap-1">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-8" title="Export">
+              <HugeiconsIcon icon={Download04Icon} size={18} strokeWidth={2} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-40 p-1">
+            <div className="space-y-0.5">
+              {(["SVG", "DXF", "PDF"] as const).map(format => (
+                <button
+                  key={format}
+                  className="flex w-full items-center rounded px-2 py-1.5 text-xs hover:bg-accent"
+                  onClick={() => {
+                    const ext = format.toLowerCase();
+                    save({ filters: [{ name: format, extensions: [ext] }] }).then((path) => {
+                      if (!path)
+                        return;
+                      if (ext === "svg")
+                        exportSvgToFile([], path);
+                      else if (ext === "dxf")
+                        exportDxf([], path);
+                      else if (ext === "pdf")
+                        exportPdf([], path);
+                    });
+                  }}
+                >
+                  Export as
+                  {" "}
+                  {format}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="size-8" title="Keyboard shortcuts">
