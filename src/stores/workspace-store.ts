@@ -13,6 +13,8 @@ type WorkspaceStore = {
   setZoomPercent: (pct: number) => void;
   snapEnabled: boolean;
   toggleSnap: () => void;
+  rulersVisible: boolean;
+  toggleRulers: () => void;
 };
 
 export const useWorkspaceStore = create<WorkspaceStore>(set => ({
@@ -24,4 +26,6 @@ export const useWorkspaceStore = create<WorkspaceStore>(set => ({
   setZoomPercent: pct => set({ zoomPercent: pct }),
   snapEnabled: false,
   toggleSnap: () => set(s => ({ snapEnabled: !s.snapEnabled })),
+  rulersVisible: true,
+  toggleRulers: () => set(s => ({ rulersVisible: !s.rulersVisible })),
 }));
