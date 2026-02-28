@@ -14,6 +14,7 @@ import { createTool } from "../lib/tools/create-tool";
 
 const TOOL_SHORTCUTS: Record<string, Tool> = {
   v: "select",
+  a: "node-edit",
   l: "line",
   c: "curve",
   p: "pen",
@@ -36,6 +37,12 @@ export function Canvas2D() {
   const panStartRef = useRef({ x: 0, y: 0 });
   const spaceHeldRef = useRef(false);
   const toolRef = useRef<CanvasTool | null>(null);
+  const snapEnabledRef = useRef(useWorkspaceStore.getState().snapEnabled);
+  useEffect(() => {
+    return useWorkspaceStore.subscribe((state) => {
+      snapEnabledRef.current = state.snapEnabled;
+    });
+  }, []);
 
   const { data: pieces } = usePatternPieces();
   const piecesRef = useRef(pieces ?? []);
@@ -112,6 +119,7 @@ export function Canvas2D() {
       setActiveTool: tool => useToolStore.getState().setActiveTool(tool as Tool),
       screenToWorld: (sx, sy) => screenToWorld(cameraRef.current, sx, sy),
       getCanvasRect: () => canvasRef.current?.getBoundingClientRect() ?? null,
+      snapEnabledRef,
     };
   }
 
@@ -183,6 +191,13 @@ export function Canvas2D() {
         return;
       }
 
+      // Snap toggle
+      if (e.key === ".") {
+        e.preventDefault();
+        useWorkspaceStore.getState().toggleSnap();
+        return;
+      }
+
       // Tool shortcuts (single key, no modifiers)
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         const toolName = TOOL_SHORTCUTS[e.key.toLowerCase()];
@@ -224,6 +239,8 @@ export function Canvas2D() {
       world,
       screen: { x: sx, y: sy },
       shiftKey: e.shiftKey,
+      altKey: e.altKey,
+      ctrlKey: e.ctrlKey || e.metaKey,
       button: e.button,
     };
   }, []);
