@@ -7,7 +7,6 @@ const BG_LIGHT = new Color(0xFAFAFA);
 const BG_DARK = new Color(0x0A0A0A);
 
 export function Scene() {
-  const gl = useThree(s => s.gl);
   const scene = useThree(s => s.scene);
 
   useEffect(() => {
@@ -21,7 +20,7 @@ export function Scene() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
     return () => observer.disconnect();
-  }, [scene, gl]);
+  }, [scene]);
 
   return (
     <>

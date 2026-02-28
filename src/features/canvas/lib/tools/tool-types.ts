@@ -1,5 +1,5 @@
 import type { Camera } from "../canvas-math";
-import type { CurveSegment, PatternPieceData, PatternPieceId, Point2D } from "@/types/pattern";
+import type { PatternPieceData, PatternPieceId, Point2D } from "@/types/pattern";
 
 export type ToolContext = {
   cameraRef: { current: Camera };
@@ -45,16 +45,4 @@ export type CanvasTool = {
   drawOverlay: (ctx: CanvasRenderingContext2D, camera: Camera) => void;
   getCursor: () => string;
   cleanup: () => void;
-};
-
-export type DrawingPoint = {
-  position: Point2D;
-  handleIn: Point2D | null;
-  handleOut: Point2D | null;
-};
-
-export type DrawingState = {
-  points: Point2D[];
-  segments: CurveSegment[];
-  mousePosition: Point2D | null;
 };

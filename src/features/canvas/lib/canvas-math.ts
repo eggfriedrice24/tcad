@@ -17,13 +17,6 @@ export function screenToWorld(camera: Camera, sx: number, sy: number): Point2D {
   };
 }
 
-export function worldToScreen(camera: Camera, wx: number, wy: number): Point2D {
-  return {
-    x: wx * camera.zoom + camera.x,
-    y: wy * camera.zoom + camera.y,
-  };
-}
-
 export function applyTransform(ctx: CanvasRenderingContext2D, camera: Camera) {
   ctx.setTransform(camera.zoom, 0, 0, camera.zoom, camera.x, camera.y);
 }
