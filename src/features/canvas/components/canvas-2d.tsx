@@ -2,10 +2,13 @@ import type { Camera } from "../lib/canvas-math";
 import type { CanvasTool, PointerState, ToolContext } from "../lib/tools/tool-types";
 import type { Tool } from "@/stores/tool-store";
 
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useRef } from "react";
-import { useCreatePiece, useDeletePiece, usePatternPieces, useUpdatePiece } from "@/features/pattern/hooks/use-pattern-queries";
+import { useCreatePiece, useDeletePiece, useLoadProject, useNewProject, usePatternPieces, useRedo, useSaveProject, useUndo, useUpdatePiece } from "@/features/pattern/hooks/use-pattern-queries";
+import { useProjectStore } from "@/stores/project-store";
 import { useSelectionStore } from "@/stores/selection-store";
 import { useToolStore } from "@/stores/tool-store";
+
 import { useWorkspaceStore } from "@/stores/workspace-store";
 
 import { createCamera, screenToWorld, zoomAtPoint } from "../lib/canvas-math";
@@ -64,6 +67,31 @@ export function Canvas2D() {
   const createPieceMut = useCreatePiece();
   const updatePieceMut = useUpdatePiece();
   const deletePieceMut = useDeletePiece();
+  const undoMut = useUndo();
+  const redoMut = useRedo();
+  const saveMut = useSaveProject();
+  const loadMut = useLoadProject();
+  const newMut = useNewProject();
+  const undoMutRef = useRef(undoMut);
+  const redoMutRef = useRef(redoMut);
+  const saveMutRef = useRef(saveMut);
+  const loadMutRef = useRef(loadMut);
+  const newMutRef = useRef(newMut);
+  useEffect(() => {
+    undoMutRef.current = undoMut;
+  }, [undoMut]);
+  useEffect(() => {
+    redoMutRef.current = redoMut;
+  }, [redoMut]);
+  useEffect(() => {
+    saveMutRef.current = saveMut;
+  }, [saveMut]);
+  useEffect(() => {
+    loadMutRef.current = loadMut;
+  }, [loadMut]);
+  useEffect(() => {
+    newMutRef.current = newMut;
+  }, [newMut]);
   const createPieceMutRef = useRef(createPieceMut);
   const updatePieceMutRef = useRef(updatePieceMut);
   const deletePieceMutRef = useRef(deletePieceMut);
@@ -188,6 +216,70 @@ export function Canvas2D() {
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
         spaceHeldRef.current = true;
+        return;
+      }
+
+      // Undo/Redo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redoMutRef.current.mutate();
+        }
+        else {
+          undoMutRef.current.mutate();
+        }
+        return;
+      }
+
+      // Save (Ctrl+S / Ctrl+Shift+S)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        const projectStore = useProjectStore.getState();
+        if (!e.shiftKey && projectStore.path) {
+          saveMutRef.current.mutate(projectStore.path, {
+            onSuccess: () => projectStore.setDirty(false),
+          });
+        }
+        else {
+          save({ filters: [{ name: "TCAD", extensions: ["tcad"] }] }).then((filePath) => {
+            if (!filePath)
+              return;
+            const finalPath = filePath.endsWith(".tcad") ? filePath : `${filePath}.tcad`;
+            const fileName = finalPath.split("/").pop()?.replace(".tcad", "") ?? "Untitled";
+            saveMutRef.current.mutate(finalPath, {
+              onSuccess: () => projectStore.setProject(fileName, finalPath),
+            });
+          });
+        }
+        return;
+      }
+
+      // Open (Ctrl+O)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        open({ filters: [{ name: "TCAD", extensions: ["tcad"] }], multiple: false }).then((path) => {
+          if (path) {
+            const name = path.split("/").pop()?.replace(".tcad", "") ?? "Untitled";
+            loadMutRef.current.mutate(path, {
+              onSuccess: () => {
+                useProjectStore.getState().setProject(name, path);
+                useSelectionStore.getState().clear();
+              },
+            });
+          }
+        });
+        return;
+      }
+
+      // New (Ctrl+N)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        newMutRef.current.mutate(undefined, {
+          onSuccess: () => {
+            useProjectStore.getState().reset();
+            useSelectionStore.getState().clear();
+          },
+        });
         return;
       }
 
