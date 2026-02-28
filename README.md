@@ -6,11 +6,11 @@ Built with **Tauri v2** (Rust backend) + **React** (TypeScript frontend).
 
 ## Features
 
-- **2D Canvas** — Draw pattern pieces with line, curve, and pen tools. Pan/zoom, adaptive grid, selection, drag-move.
-- **3D Viewport** — Live mesh preview of pattern pieces via Three.js. Auto-framing camera, selection sync with 2D.
-- **Geometry Engine** — Seam allowance, validation, area computation — all in Rust.
-- **Persistence** — Project save/load (`.tcad`), undo/redo (100 states), auto-recovery on crash.
-- **Export** — SVG, DXF (R12), and tiled PDF (A4/Letter with alignment crosshairs).
+- **2D Canvas** - Draw pattern pieces with line, curve, and pen tools. Pan/zoom, adaptive grid, selection, drag-move.
+- **3D Viewport** - Live mesh preview of pattern pieces via Three.js. Auto-framing camera, selection sync with 2D.
+- **Geometry Engine** - Seam allowance, validation, area computation — all in Rust.
+- **Persistence** - Project save/load (`.tcad`), undo/redo (100 states), auto-recovery on crash.
+- **Export** - SVG, DXF (R12), and tiled PDF (A4/Letter with alignment crosshairs).
 
 ## Architecture
 
