@@ -5,6 +5,7 @@ import type { CurveSegment, Point2D } from "@/types/pattern";
 import { constrainAngle } from "../constrain";
 import { createPieceFromOutline } from "../piece-factory";
 import { snapToGrid } from "../snap";
+import { handleDrawingDoubleClick, handleDrawingKeyDown, isNearFirstPoint } from "./drawing-utils";
 import {
   beginOverlay,
   drawCloseIndicator,
@@ -13,8 +14,6 @@ import {
   drawSnapIndicator,
   endOverlay,
 } from "./overlay-renderer";
-
-const CLOSE_THRESHOLD = 10; // pixels (screen space)
 
 export function createLineTool(ctx: ToolContext): CanvasTool {
   let points: Point2D[] = [];
@@ -39,14 +38,8 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
     return result.point;
   }
 
-  function isNearFirstPoint(world: Point2D): boolean {
-    if (points.length < 3)
-      return false;
-    const first = points[0];
-    const dx = world.x - first.x;
-    const dy = world.y - first.y;
-    const threshold = CLOSE_THRESHOLD / ctx.cameraRef.current.zoom;
-    return Math.sqrt(dx * dx + dy * dy) < threshold;
+  function checkNearFirst(world: Point2D): boolean {
+    return points.length >= 3 && isNearFirstPoint(points[0], world, ctx.cameraRef.current.zoom);
   }
 
   function finish(close: boolean) {
@@ -78,7 +71,7 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
     const snapped = process(state.world, state.shiftKey);
 
     // Check close
-    if (isNearFirstPoint(snapped)) {
+    if (checkNearFirst(snapped)) {
       finish(true);
       return;
     }
@@ -91,21 +84,11 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
   }
 
   function onDoubleClick(_state: PointerState) {
-    // Double-click finishes (the second click from dblclick already added a point)
-    // Remove the duplicate last point from the second click
-    if (points.length > 1) {
-      points.pop();
-    }
-    finish(false);
+    handleDrawingDoubleClick(points, () => finish(false));
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      finish(false);
-    }
-    else if (e.key === "Escape") {
-      reset();
-    }
+    handleDrawingKeyDown(e, () => finish(false), reset);
   }
 
   function drawOverlay(drawCtx: CanvasRenderingContext2D, camera: Camera) {
@@ -125,7 +108,7 @@ export function createLineTool(ctx: ToolContext): CanvasTool {
     }
 
     // Draw close indicator
-    if (mousePos && isNearFirstPoint(mousePos)) {
+    if (mousePos && checkNearFirst(mousePos)) {
       drawCloseIndicator(drawCtx, points[0], camera.zoom);
     }
 

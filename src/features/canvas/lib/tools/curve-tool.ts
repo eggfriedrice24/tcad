@@ -5,6 +5,7 @@ import type { CurveSegment, Point2D } from "@/types/pattern";
 import { constrainAngle } from "../constrain";
 import { createPieceFromOutline } from "../piece-factory";
 import { snapToGrid } from "../snap";
+import { handleDrawingDoubleClick, handleDrawingKeyDown, isNearFirstPoint } from "./drawing-utils";
 import {
   beginOverlay,
   drawCloseIndicator,
@@ -15,8 +16,6 @@ import {
   drawSnapIndicator,
   endOverlay,
 } from "./overlay-renderer";
-
-const CLOSE_THRESHOLD = 10;
 
 type CurvePoint = {
   position: Point2D;
@@ -50,14 +49,8 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
     return result.point;
   }
 
-  function isNearFirstPoint(world: Point2D): boolean {
-    if (curvePoints.length < 3)
-      return false;
-    const first = curvePoints[0].position;
-    const dx = world.x - first.x;
-    const dy = world.y - first.y;
-    const threshold = CLOSE_THRESHOLD / ctx.cameraRef.current.zoom;
-    return Math.sqrt(dx * dx + dy * dy) < threshold;
+  function checkNearFirst(world: Point2D): boolean {
+    return curvePoints.length >= 3 && isNearFirstPoint(curvePoints[0].position, world, ctx.cameraRef.current.zoom);
   }
 
   function finish(close: boolean) {
@@ -124,7 +117,7 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
 
     const snapped = process(state.world, state.shiftKey);
 
-    if (isNearFirstPoint(snapped)) {
+    if (checkNearFirst(snapped)) {
       finish(true);
       return;
     }
@@ -165,19 +158,11 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
   }
 
   function onDoubleClick() {
-    if (curvePoints.length > 1) {
-      curvePoints.pop();
-    }
-    finish(false);
+    handleDrawingDoubleClick(curvePoints, () => finish(false));
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      finish(false);
-    }
-    else if (e.key === "Escape") {
-      reset();
-    }
+    handleDrawingKeyDown(e, () => finish(false), reset);
   }
 
   function drawOverlay(drawCtx: CanvasRenderingContext2D, camera: Camera) {
@@ -236,7 +221,7 @@ export function createCurveTool(ctx: ToolContext): CanvasTool {
     }
 
     // Close indicator
-    if (mousePos && !isDown && isNearFirstPoint(mousePos)) {
+    if (mousePos && !isDown && checkNearFirst(mousePos)) {
       drawCloseIndicator(drawCtx, curvePoints[0].position, camera.zoom);
     }
 
