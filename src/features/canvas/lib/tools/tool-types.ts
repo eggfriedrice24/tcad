@@ -21,12 +21,17 @@ export type ToolContext = {
   // Screen-to-world conversion
   screenToWorld: (sx: number, sy: number) => Point2D;
   getCanvasRect: () => DOMRect | null;
+
+  // Snap
+  snapEnabledRef: { current: boolean };
 };
 
 export type PointerState = {
   world: Point2D;
   screen: Point2D;
   shiftKey: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
   button: number;
 };
 

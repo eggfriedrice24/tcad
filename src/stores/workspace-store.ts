@@ -11,6 +11,8 @@ type WorkspaceStore = {
   setCursorWorld: (pt: Point2D) => void;
   zoomPercent: number;
   setZoomPercent: (pct: number) => void;
+  snapEnabled: boolean;
+  toggleSnap: () => void;
 };
 
 export const useWorkspaceStore = create<WorkspaceStore>(set => ({
@@ -20,4 +22,6 @@ export const useWorkspaceStore = create<WorkspaceStore>(set => ({
   setCursorWorld: pt => set({ cursorWorld: pt }),
   zoomPercent: 100,
   setZoomPercent: pct => set({ zoomPercent: pct }),
+  snapEnabled: false,
+  toggleSnap: () => set(s => ({ snapEnabled: !s.snapEnabled })),
 }));
